@@ -1,13 +1,15 @@
-import pytest
-from fastapi.testclient import TestClient
-import sys
+"""Keep RAG tests on TF-IDF so CI does not download embedding models."""
 import os
 
-# Ensure backend directory is in PYTHONPATH so tests can import modules directly
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import pytest
+from fastapi.testclient import TestClient
 
-from main import app
+import main
 
-@pytest.fixture
+os.environ["RAG_RETRIEVAL"] = "tfidf"
+
+
+@pytest.fixture()
 def client():
-    return TestClient(app)
+    with TestClient(main.app) as c:
+        yield c

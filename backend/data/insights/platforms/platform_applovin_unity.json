@@ -1,0 +1,22 @@
+{
+    "id": "platform_applovin_unity",
+    "category": "platform",
+    "name": "AppLovin / Unity Ads",
+    "specs": {
+        "format": "Full-screen Video + Interactive Endcard (IEC)",
+        "playable_focus": "Pure HTML5 interactive gameplay (Zero-load time)",
+        "sdk_logic": "Deep integration with game level data"
+    },
+    "platform_exclusive_logic": {
+        "Frictionless_Trial": "The Playable must be a simplified, 'hyper-rewarding' version of the actual game.",
+        "The_Click_Trap": "A small, easy interaction (e.g., 'Drag to Merge') that leads to an immediate 'Big Win' screen.",
+        "Algorithm_Matching": "Create multiple versions of the same gameplay with different 'Difficulty Levels' (Easy/Medium/Hard)."
+    },
+    "psychological_hooks": [
+        "Instant Gratification: Let them win a hard battle in the first 10 seconds of the playable.",
+        "The Endowment Effect: Once they start the playable, they feel they've 'invested' time and want the reward (the actual game).",
+        "The 'One More Try' Loop: If they fail the playable, offer a 'Retry' button that leads to the App Store."
+    ],
+    "focus": "Gameplay Core (The 'Fun' Loop) > Conversion Efficiency",
+    "short_name": "AppLovinUnity"
+}

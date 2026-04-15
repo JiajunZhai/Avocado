@@ -1,0 +1,20 @@
+{
+    "id": "angle_asmr_pro",
+    "category": "psychological_angle",
+    "name": "ASMR Satisfying (Sensory Dominance)",
+    "logic_steps": [
+        "The 'Itch' (0-3s): Show a highly 'uncomfortable' visual—tangled wires, a mud-caked object, or unsorted items.",
+        "The Process: A tool moves at a constant speed, 'cleaning' or 'sorting' with ultra-clear, layered SFX (Scraping, Popping, Shoveling).",
+        "The Loop: The visuals should be rhythmic and hypnotic. Each action must result in a 'Clean Surface' or 'Perfect Fit'.",
+        "The Perfection Gap: At 90% completion, the tool makes a 'clumsy mistake' or the video loops. This triggers an irresistible urge to finish the task."
+    ],
+    "audio_key": "High-frequency tactile sounds. Binaural audio if possible. Remove BGM to focus on SFX.",
+    "visual_style": "High-definition textures. Micro-particle effects (dust, water droplets) during cleaning.",
+    "psychological_triggers": [
+        "Sensory Satisfaction (Dopamine hit)",
+        "OCD Triggering (Obsessive Compulsive Desire)",
+        "Stress Relief"
+    ],
+    "kpi_focus": "Retention (VTR) and Lowering CPI in high-latency markets.",
+    "short_name": "ASMR"
+}

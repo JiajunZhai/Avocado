@@ -1,0 +1,25 @@
+{
+    "id": "region_na_advanced",
+    "category": "region",
+    "name": "North America",
+    "culture_notes": [
+        "Visual Language: 'Anti-Ad' aesthetic. It shouldn't look like a high-budget commercial. Use 'POV' (Point of View) overlays and raw phone-captured textures.",
+        "Meme Sophistication: Move beyond static memes; use 'Reaction' style split-screens. One side is the gameplay, the other is a 'Person' (or AI persona) showing extreme confusion or smugness.",
+        "Diversity & Inclusivity: Visuals should reflect a multi-cultural society without being 'forced'. Realistic character proportions > stylized perfection.",
+        "The 'Choice' Mechanic: Use UI that mimics OS notifications or dating app swipes (Left/Right) to force a mental micro-decision in the first 2 seconds.",
+        "Fast-Cut ADHD Logic: Not just frame resets, but 'Zoom-ins' on specific UI numbers and 'Screen Shakes' on impact/failure."
+    ],
+    "creative_hooks": [
+        "The 'Logic Trap': Use text like '99% of people pick the wrong door' or 'Are you actually smart? Prove it.' (Intellectual Ego Hook).",
+        "The 'Work vs. Life' relatable hook: Start with a scene of a boring office/boss yelling, then immediate transition to the 'Explosive' game world (Escape Reality).",
+        "The 'Nostalgia' Hook: Using 8-bit sound effects or UI elements that remind Gen X/Millennials of retro arcade games.",
+        "The 'ASMR/Satisfying' Hook: High-fidelity sounds of coins clinking, glass breaking, or grass cutting (The 'Brain Massage' effect)."
+    ],
+    "preferred_bgm": "Lo-fi Hip-hop for 'Chill' games; Phonk or High-energy Synthwave for Action/SLG. Avoid generic stock music.",
+    "tone_and_manner": {
+        "voiceover": "Use popular AI Text-to-Speech (TTS) voices like 'Jessie' (TikTok) or a sarcastic, deadpan male narrator. Sarcastic > Enthusiastic.",
+        "copywriting": "Minimalist. Use slang like 'No Cap', 'POV', 'Bet', 'Level: Impossible'."
+    },
+    "focus": "Individual Agency (My choices matter) > Intellectual Superiority (I am smarter than the ad) > Instant Stress Relief",
+    "short_name": "NA"
+}

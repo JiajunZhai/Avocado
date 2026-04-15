@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 import os
 import sys
 import json
-from typing import Any
+from typing import Any, Optional
 from dotenv import load_dotenv
 from openai import OpenAI
 import uuid
@@ -40,6 +40,7 @@ class GenerateScriptRequest(BaseModel):
     platform_id: str
     angle_id: str
     engine: str = Field(default="cloud", description="The LLM source engine (cloud or local)")
+    output_mode: str = Field(default="cn", description="Markdown output mode: cn or en")
 
 class GenerateScriptResponse(BaseModel):
     script_id: str
@@ -56,6 +57,7 @@ class GenerateScriptResponse(BaseModel):
     cultural_notes: list[str]
     competitor_trend: str
     citations: list[str] = []
+    markdown_path: Optional[str] = None
 
 @app.get("/")
 def read_root():
@@ -65,6 +67,8 @@ def read_root():
 from scraper import fetch_playstore_data, extract_usp_via_llm_with_usage
 from exporter import generate_pdf_report
 from refinery import retrieve_context, distill_and_store
+from md_export import export_markdown_after_generate
+from knowledge_paths import FACTORS_DIR, ensure_knowledge_layout
 from usage_tokens import total_tokens_from_completion
 from usage_tracker import (
     get_summary as usage_get_summary,
@@ -94,10 +98,13 @@ REQUIRED_SCRIPT_FIELDS = {
 REQUIRED_SCRIPT_LINE_FIELDS = {
     "time",
     "visual",
+    "visual_meaning",
     "audio_content",
     "audio_meaning",
     "text_content",
-    "text_meaning"
+    "text_meaning",
+    "direction_note",
+    "sfx_transition_note",
 }
 
 def _print_console_safe(text: str) -> None:
@@ -124,6 +131,24 @@ def _is_valid_script_payload(payload: dict[str, Any]) -> bool:
         if not REQUIRED_SCRIPT_LINE_FIELDS.issubset(line.keys()):
             return False
     return True
+
+
+def _normalize_script_lines(payload: dict[str, Any]) -> dict[str, Any]:
+    """Backfill new director-facing fields for backward compatibility."""
+    script = payload.get("script")
+    if not isinstance(script, list):
+        return payload
+    for line in script:
+        if not isinstance(line, dict):
+            continue
+        visual = str(line.get("visual", "")).strip()
+        audio_meaning = str(line.get("audio_meaning", "")).strip()
+        line.setdefault("visual_meaning", visual)
+        line.setdefault("direction_note", "")
+        line.setdefault("sfx_transition_note", "")
+        if audio_meaning and "语气" not in audio_meaning and "节奏" not in audio_meaning:
+            line["audio_meaning"] = f"{audio_meaning}（语气：自然口语；节奏：短句有力）"
+    return payload
 
 def _looks_like_error_placeholder(data: dict[str, Any]) -> bool:
     haystacks = [
@@ -209,7 +234,7 @@ def extract_url(request: ExtractUrlRequest):
             
             if _validate_director_archive(parsed):
                 extracted_usp = _serialize_director_archive(parsed, installs, recent_changes)
-                extract_tokens = response.usage.total_tokens if hasattr(response, 'usage') and response.usage else 0
+                extract_tokens = total_tokens_from_completion(response)
                 extract_used_llm = True
             else:
                 raise ValueError("JSON validation failed")
@@ -311,7 +336,8 @@ Keep it strictly technical and UA focused."""
 def get_insights_metadata():
     """Reads the JSON DB and returns available config options for frontend."""
     import os, json
-    base_dir = os.path.join(os.path.dirname(__file__), 'data', 'insights')
+    ensure_knowledge_layout()
+    base_dir = str(FACTORS_DIR)
     if not os.path.exists(base_dir):
         return {"regions": [], "platforms": [], "angles": []}
     
@@ -335,7 +361,8 @@ class InsightManageRequest(BaseModel):
 @app.post("/api/insights/manage/update")
 def update_insight(req: InsightManageRequest):
     import os, json
-    base_dir = os.path.join(os.path.dirname(__file__), 'data', 'insights')
+    ensure_knowledge_layout()
+    base_dir = str(FACTORS_DIR)
     target_dir = os.path.join(base_dir, req.category)
     os.makedirs(target_dir, exist_ok=True)
     file_path = os.path.join(target_dir, f"{req.insight_id}.json")
@@ -350,12 +377,51 @@ class InsightDeleteRequest(BaseModel):
 @app.post("/api/insights/manage/delete")
 def delete_insight(req: InsightDeleteRequest):
     import os
-    base_dir = os.path.join(os.path.dirname(__file__), 'data', 'insights')
+    ensure_knowledge_layout()
+    base_dir = str(FACTORS_DIR)
     file_path = os.path.join(base_dir, req.category, f"{req.insight_id}.json")
     if os.path.exists(file_path):
         os.remove(file_path)
         return {"success": True}
     return {"success": False, "error": "Not found"}
+
+
+def generate_script_local(
+    request: GenerateScriptRequest,
+    final_prompt: str,
+    *,
+    rag_supplement: str = "",
+    region_boost_tokens: list[str] | None = None,
+) -> dict[str, Any]:
+    """Run director synthesis via local Ollama; merges RAG citations from retrieve_context."""
+    from ollama_client import generate_with_local_llm
+
+    ctx, citations = retrieve_context(
+        f"{request.region_id} {request.platform_id} {request.angle_id}",
+        top_k=5,
+        supplement=rag_supplement,
+        region_boost_tokens=region_boost_tokens,
+    )
+    user_input = (
+        f"Oracle / market context (may be empty):\n{ctx}\n\n"
+        "Produce one JSON object with all required director script fields (hook scores, script lines, etc.)."
+    )
+    result = generate_with_local_llm(system_prompt=final_prompt, user_input=user_input, expected_json=True)
+    out = _normalize_script_lines(result.output) if isinstance(result.output, dict) else result.output
+    if not isinstance(out, dict):
+        return {
+            "success": False,
+            "error_code": "LOCAL_JSON_PARSE_FAILED",
+            "error_message": "Local model output is not a JSON object.",
+            "raw_excerpt": str(out)[:500],
+        }
+    if out.get("success") is False:
+        return out
+    merged = dict(out)
+    if not merged.get("citations"):
+        merged["citations"] = list(citations or [])
+    return merged
+
 
 @app.post("/api/generate", response_model=GenerateScriptResponse)
 def generate_script(request: GenerateScriptRequest):
@@ -371,7 +437,8 @@ def generate_script(request: GenerateScriptRequest):
             project_json = json.load(f)
     
     # Get Atomic Insights
-    base_dir = os.path.join(os.path.dirname(__file__), 'data', 'insights')
+    ensure_knowledge_layout()
+    base_dir = str(FACTORS_DIR)
     def read_insight(insight_id: str):
         if not insight_id: return {"error": "not provided"}
         category = insight_id.split('_')[0] + 's' # 'region' -> 'regions'
@@ -426,14 +493,108 @@ def generate_script(request: GenerateScriptRequest):
         except Exception as e:
             print(f"Failed to record history: {e}")
 
+    def finalize_response(resp: dict[str, Any], engine_label: str) -> GenerateScriptResponse:
+        resp = _normalize_script_lines(resp)
+        resp.setdefault("citations", [])
+        if resp.get("cultural_notes") is None:
+            resp["cultural_notes"] = []
+        md_rel = export_markdown_after_generate(
+            request.project_id,
+            str(project_json.get("name") or "Unknown"),
+            {
+                "region": request.region_id,
+                "platform": request.platform_id,
+                "angle": request.angle_id,
+                "region_name": str(region_json.get("name") or request.region_id) if isinstance(region_json, dict) else request.region_id,
+                "platform_name": str(platform_json.get("name") or request.platform_id) if isinstance(platform_json, dict) else request.platform_id,
+                "angle_name": str(angle_json.get("name") or request.angle_id) if isinstance(angle_json, dict) else request.angle_id,
+                "region_short": str(region_json.get("short_name") or "") if isinstance(region_json, dict) else "",
+                "platform_short": str(platform_json.get("short_name") or "") if isinstance(platform_json, dict) else "",
+                "angle_short": str(angle_json.get("short_name") or "") if isinstance(angle_json, dict) else "",
+            },
+            engine_label,
+            resp,
+            request.output_mode,
+        )
+        payload = {**resp, "markdown_path": md_rel}
+        return GenerateScriptResponse(**payload)
+
     # 3. IF LOCAL ENGINE PREFERRED
     script_id = "SOP-" + uuid.uuid4().hex[:6].upper()
     if request.engine == 'local':
-        resp = generate_script_local(request, final_prompt)
-        if "error" not in resp:
-            resp['script_id'] = script_id
-            record_history(project_json, request, resp, 'local')
-            return GenerateScriptResponse(**resp)
+        rag_parts: list[str] = [
+            request.region_id,
+            request.platform_id,
+            request.angle_id,
+            game_context,
+        ]
+        if isinstance(region_json, dict):
+            n = region_json.get("name")
+            if n:
+                rag_parts.append(str(n))
+            for key in ("culture_notes", "creative_hooks", "focus"):
+                val = region_json.get(key)
+                if isinstance(val, list):
+                    rag_parts.append(" ".join(str(x) for x in val[:6]))
+                elif isinstance(val, str) and val:
+                    rag_parts.append(val[:800])
+        if isinstance(platform_json, dict):
+            specs = platform_json.get("specs")
+            if isinstance(specs, dict):
+                fmt = specs.get("format")
+                if isinstance(fmt, list):
+                    rag_parts.append(" ".join(str(x) for x in fmt))
+                for sk in ("pacing", "safe_zone"):
+                    sv = specs.get(sk)
+                    if isinstance(sv, str) and sv:
+                        rag_parts.append(sv[:500])
+            elif isinstance(specs, list):
+                rag_parts.append(" ".join(str(x) for x in specs[:8]))
+            ph = platform_json.get("psychological_hooks")
+            if isinstance(ph, list):
+                rag_parts.append(" ".join(str(x) for x in ph[:6]))
+            for key in ("name", "native_behavior", "focus"):
+                v = platform_json.get(key)
+                if isinstance(v, str) and v:
+                    rag_parts.append(v[:600])
+        if isinstance(angle_json, dict):
+            for key in ("name", "core_emotion", "logic_steps"):
+                v = angle_json.get(key)
+                if isinstance(v, list):
+                    rag_parts.append(" ".join(str(x) for x in v[:8]))
+                elif isinstance(v, str) and v:
+                    rag_parts.append(v[:600])
+        rag_supplement = "\n".join(p for p in rag_parts if p)
+        region_boost: list[str] = []
+        if isinstance(region_json, dict) and region_json.get("name"):
+            region_boost.append(str(region_json["name"]))
+        resp = generate_script_local(
+            request,
+            final_prompt,
+            rag_supplement=rag_supplement,
+            region_boost_tokens=region_boost or None,
+        )
+        if resp.get("success") is False:
+            raise HTTPException(
+                status_code=502,
+                detail={
+                    "error_code": resp.get("error_code", "LOCAL_UNKNOWN"),
+                    "error_message": resp.get("error_message", ""),
+                    "raw_excerpt": resp.get("raw_excerpt", ""),
+                },
+            )
+        if not _is_valid_script_payload(resp):
+            raise HTTPException(
+                status_code=502,
+                detail={
+                    "error_code": "LOCAL_SCHEMA_MISMATCH",
+                    "error_message": "Local model output failed schema validation.",
+                    "raw_excerpt": json.dumps(resp, ensure_ascii=False)[:500],
+                },
+            )
+        resp["script_id"] = script_id
+        record_history(project_json, request, resp, "local")
+        return finalize_response(resp, "local")
 
     # 4. DEFAULT CLOUD CLUSTER
     if cloud_client:
@@ -448,16 +609,34 @@ def generate_script(request: GenerateScriptRequest):
             )
             raw = response.choices[0].message.content
             parsed = json.loads(raw)
-            parsed['script_id'] = script_id
+            parsed = _normalize_script_lines(parsed)
+            parsed["script_id"] = script_id
+            parsed.setdefault("citations", [])
+            if parsed.get("cultural_notes") is None:
+                parsed["cultural_notes"] = []
             record_generate_success(engine='cloud', measured_tokens=0)
             record_history(project_json, request, parsed, 'cloud')
-            return GenerateScriptResponse(**parsed)
+            return finalize_response(parsed, "cloud")
         except Exception as e:
             print(f"Synthesis Engine failed: {e}")
             pass
 
     record_generate_success(engine='mock', measured_tokens=0)
     # Mock fallback
+    def _platform_editing_rhythm(pj: dict[str, Any]) -> str:
+        s = pj.get("specs")
+        if isinstance(s, list) and len(s) > 0:
+            return str(s[0])
+        if isinstance(s, dict) and s:
+            return str(next(iter(s.values())))
+        return "Standard cuts"
+
+    def _angle_visual_step(aj: dict[str, Any]) -> str:
+        steps = aj.get("logic_steps")
+        if isinstance(steps, list) and len(steps) > 0:
+            return str(steps[0])
+        return "Action"
+
     mock_resp = {
         "script_id": script_id,
         "hook_score": 95,
@@ -467,15 +646,18 @@ def generate_script(request: GenerateScriptRequest):
         "conversion_score": 95,
         "conversion_reasoning": "High emotional resonance based on Angle isolation.",
         "bgm_direction": region_json.get('preferred_bgm', 'Epic Score'),
-        "editing_rhythm": platform_json.get('specs', ['Standard cuts'])[0],
+        "editing_rhythm": _platform_editing_rhythm(platform_json),
         "script": [
             {
                 "time": "0s",
-                "visual": angle_json.get('logic_steps', ['Action'])[0] if isinstance(angle_json.get('logic_steps'), list) else 'Action',
+                "visual": _angle_visual_step(angle_json),
+                "visual_meaning": "中文画面说明：突出核心玩法动作与结果反馈，避免仿系统原生 UI 误导。",
                 "audio_content": "Native Voiceover (Simulated)",
-                "audio_meaning": "Oh no!",
+                "audio_meaning": "哦不！（语气：夸张但不刺耳；节奏：短促）",
                 "text_content": "Local text",
-                "text_meaning": "Alert"
+                "text_meaning": "提示文案",
+                "direction_note": "导演提示：前 2 秒快节奏钩子，随后切入真实玩法并放慢镜头展示反馈。",
+                "sfx_transition_note": "后期提示：失误点后插入 0.15-0.25 秒静音真空，再进 ASMR 或主 BGM。"
             }
         ],
         "psychology_insight": angle_json.get('core_emotion', 'None'),
@@ -484,4 +666,4 @@ def generate_script(request: GenerateScriptRequest):
         "citations": [f"JSON: {request.region_id}", f"JSON: {request.platform_id}", f"JSON: {request.angle_id}"]
     }
     record_history(project_json, request, mock_resp, 'mock')
-    return GenerateScriptResponse(**mock_resp)
+    return finalize_response(mock_resp, "mock")

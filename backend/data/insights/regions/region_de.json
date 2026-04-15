@@ -1,0 +1,19 @@
+{
+    "id": "region_de",
+    "category": "region",
+    "name": "Germany (Logic & Authenticity)",
+    "culture_notes": [
+        "Honest Gameplay: Direct recording of game mechanics without overly flashy fake filters.",
+        "Depth & Strategy: Show tech trees, complex building layouts, or tactical troop formations.",
+        "The 'Fairness' Factor: Emphasize 'No Pay-to-Win' or 'Skill-based' elements.",
+        "Authority & Certification: Using ratings, awards, or 'Made by [Studio Name]' builds significant trust."
+    ],
+    "visual_specs": {
+        "typography": "Clean, structured, professional fonts. No 'childish' bubbly text.",
+        "color_palette": "Realistic, slightly desaturated colors. Avoid 'neon' unless it's Cyberpunk.",
+        "pacing": "Steady and informative. Let the viewer 'read' the UI and understand the strategy."
+    },
+    "preferred_bgm": "Deep, atmospheric, or industrial soundtracks. Minimalist and non-distracting.",
+    "focus": "System Depth > Authenticity > Fairness",
+    "short_name": "DE"
+}

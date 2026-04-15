@@ -1,0 +1,21 @@
+{
+    "id": "region_us_prime",
+    "category": "region",
+    "name": "United States",
+    "culture_notes": [
+        "Visual Logic: High-contrast, cinematic lighting. If it's a casual game, use vibrant, saturated colors; if hardcore, use 'Gritty' and 'Realistic' textures.",
+        "Core Narrative: The 'Underdog Story'. From a prisoner/beggar to a King/CEO. Americans love the 'Zero to Hero' trajectory.",
+        "Decision Making: Feature 'Choice-based' UI (Option A or B). Even if the choice is fake, it triggers the American user's desire for 'Freedom' and 'Control'.",
+        "Humor: Use Sarcasm, Slapstick, or 'Epic Fails'. Self-deprecating humor in UGC (User Generated Content) style ads performs exceptionally well.",
+        "Social Proof: Influencer endorsements (even micro-influencers) or 'Reaction' face-cams are more trusted than official studio trailers."
+    ],
+    "creative_hooks": [
+        "The 'Logic Challenge': 'Only 1% can solve this' or 'Is your IQ 140?'. It triggers their competitive nature.",
+        "The 'Power Trip': Rapidly increasing numbers (EXP, Gold, Level) filling the screen with explosive VFX.",
+        "The 'Justice/Revenge' Hook: Start with the protagonist being cheated on or bullied, then immediate revenge through gameplay.",
+        "UGC/TikTok Style: A real person holding the phone, talking directly to the camera: 'Stop playing those fake games, this one is actually real.'"
+    ],
+    "preferred_bgm": "Deep Bass, Cinematic Orchestral (for SLG/RPG) or Upbeat Hip-Hop/Phonk (for Action/Casual).",
+    "focus": "Instant Gratification (Action) > Strategic Freedom (Control) > Social Status (Competition)",
+    "short_name": "US"
+}

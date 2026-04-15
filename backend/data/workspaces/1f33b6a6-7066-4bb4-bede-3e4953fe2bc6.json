@@ -1,0 +1,159 @@
+{
+  "name": "Save the Doge",
+  "game_info": {
+    "core_gameplay": "Touch-drawing line defense puzzle. Core loop: draw protective barriers on screen to shield a dog character from attacking bees/wasps for 10 seconds per level. Efficiency mechanic: use less ink (shorte",
+    "core_usp": "True underdog fantasy with charming dog characters like husky, Oliver, and boudin, creating emotional engagement.",
+    "target_persona": "Casual puzzle players seeking quick, engaging sessions with emotional appeal. Motivated by cute characters, underdog narratives, and light strategy. Genre-literate in defense/puzzle games, sensitive to monetization likely through ads or in-app purchases for power-ups. Prefers family-friendly content",
+    "value_hooks": "- Strategic defense against bee and wasp swarms with line-drawing mechanics, requiring tactical planning.\n- Quick play rescue time sessions designed for short, engaging gameplay bursts.\n- Efficiency challenge: use less ink to get higher ratings, adding a skill-based optimization layer.\n- Multiple rescue missions with increasing difficulty and beehive destruction levels, offering progression and variety."
+  },
+  "market_targets": [],
+  "history_log": [
+    {
+      "id": "SOP-3ADD82",
+      "timestamp": "2026-04-15T03:44:02.861447Z",
+      "engine": "cloud",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "Close-up on a cute husky dog (Oliver) looking scared, with bees swarming in background. High-contrast lighting, vibrant colors.",
+          "audio_content": "Save this dog from the bees! Just draw a line!",
+          "audio_meaning": "救这只狗免受蜜蜂攻击！只需画一条线！",
+          "text_content": "SAVE THE DOGE!",
+          "text_meaning": "拯救狗狗！"
+        },
+        {
+          "time": "2s",
+          "visual": "Hand cursor appears, draws a strong, thick line around the dog, protecting it. Bees bounce off. Dog smiles.",
+          "audio_content": "Easy, right?",
+          "audio_meaning": "很简单，对吧？",
+          "text_content": "DRAW TO PROTECT",
+          "text_meaning": "画线保护"
+        },
+        {
+          "time": "4s",
+          "visual": "New scene: same dog, but player hand hesitates, moves toward drawing a good line, then at last second draws a weak, wobbly line.",
+          "audio_content": "But what if you mess up?",
+          "audio_meaning": "但如果你搞砸了呢？",
+          "text_content": "LOGICAL BETRAYAL",
+          "text_meaning": "逻辑背叛"
+        },
+        {
+          "time": "6s",
+          "visual": "Line collapses dramatically, bees attack, dog cries with exaggerated tears. Negative numbers pop up ('-100 Ink').",
+          "audio_content": "Oops! Catastrophic failure!",
+          "audio_meaning": "哎呀！灾难性的失败！",
+          "text_content": "EPIC FAIL!",
+          "text_meaning": "史诗级失败！"
+        },
+        {
+          "time": "8s",
+          "visual": "Reaction face-cam of a micro-influencer looking shocked and laughing (UGC style).",
+          "audio_content": "I can't believe it!",
+          "audio_meaning": "我不敢相信！",
+          "text_content": "REACTION: ONLY 1% CAN SAVE HIM!",
+          "text_meaning": "反应：只有1%的人能救他！"
+        },
+        {
+          "time": "10s",
+          "visual": "Quick montage: player draws efficient lines, uses less ink, gets 'A+' rating. Multiple dogs (husky, boudin) rescued in different levels.",
+          "audio_content": "Can you do better? Save them all with less ink!",
+          "audio_meaning": "你能做得更好吗？用更少的墨水拯救所有狗狗！",
+          "text_content": "EFFICIENCY CHALLENGE: USE LESS INK",
+          "text_meaning": "效率挑战：使用更少的墨水"
+        },
+        {
+          "time": "13s",
+          "visual": "Choice-based UI: two options appear—'Save Now' (big button) vs. 'Watch Ad' (small button). Hand clicks 'Save Now'.",
+          "audio_content": "Your choice: be the hero!",
+          "audio_meaning": "你的选择：成为英雄！",
+          "text_content": "CHOOSE: SAVE THE DOGE",
+          "text_meaning": "选择：拯救狗狗"
+        },
+        {
+          "time": "15s",
+          "visual": "Final shot: all dogs smiling together, underdog story complete (from danger to safety). App icon and download CTA.",
+          "audio_content": "Download Save the Doge now and prove your skills!",
+          "audio_meaning": "立即下载《拯救狗狗》，证明你的技巧！",
+          "text_content": "DOWNLOAD FREE",
+          "text_meaning": "免费下载"
+        }
+      ]
+    },
+    {
+      "id": "SOP-694899",
+      "timestamp": "2026-04-15T03:45:33.882030Z",
+      "engine": "cloud",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_tiktok_advanced",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "[UGC-style shaky vertical video. Close-up on cute husky dog (Oliver) looking scared. Bees swarm in fast from top with loud BUZZ sound. Screen vibrates slightly.]",
+          "audio_content": "救命啊！蜜蜂来了！",
+          "audio_meaning": "Help! Bees are coming!",
+          "text_content": "HELP! BEES ATTACK!",
+          "text_meaning": "Help! Bees attack!"
+        },
+        {
+          "time": "0.6s",
+          "visual": "[Jump cut. Hand enters frame with finger ready to draw. Simple straight line path from bees to dog is highlighted with glowing effect. Text overlay: 'DRAW A LINE TO SAVE HIM' centered at Y:40%.]",
+          "audio_content": "画一条线就能救他，超简单对吧？",
+          "audio_meaning": "Draw a line to save him, super easy right?",
+          "text_content": "JUST DRAW A LINE. SO EASY.",
+          "text_meaning": "Just draw a line. So easy."
+        },
+        {
+          "time": "1.4s",
+          "visual": "[Jump cut. Hand hesitates, then draws a useless circle around the dog instead of a line. Dynamic zoom on the circle as it's drawn. Bees bypass it easily.]",
+          "audio_content": "等等...我好像搞错了？",
+          "audio_meaning": "Wait... did I mess up?",
+          "text_content": "WHY DRAW A CIRCLE?",
+          "text_meaning": "Why draw a circle?"
+        },
+        {
+          "time": "2.2s",
+          "visual": "[Jump cut. Slow-motion: bees sting the dog. Dog cries with exaggerated tears. 'NEGATIVE -100' pops up in red. Fake 'INK LOW' notification banner appears briefly at top.]",
+          "audio_content": "哦不！全错了！狗狗哭了！",
+          "audio_meaning": "Oh no! All wrong! The dog is crying!",
+          "text_content": "EPIC FAIL! DOGE IS CRYING!",
+          "text_meaning": "Epic fail! Doge is crying!"
+        },
+        {
+          "time": "3.0s",
+          "visual": "[Jump cut. Text overlay: 'WHY?' centered at Y:50%, then switches to 'I bet you can't save him'. Quick montage of other dogs (boudin) in similar peril with hand drawing fails.]",
+          "audio_content": "为什么这么笨？我打赌你也救不了他。",
+          "audio_meaning": "Why so stupid? I bet you can't save him either.",
+          "text_content": "WHY? I BET YOU CAN'T SAVE HIM.",
+          "text_meaning": "Why? I bet you can't save him."
+        },
+        {
+          "time": "4.0s",
+          "visual": "[Jump cut. Screen splits: Option A shows hand drawing correct line (dog saved with happy face), Option B shows another fail (dog crying). Fake choice UI with 'A or B?' overlay.]",
+          "audio_content": "选A还是选B？只有1%的人能到第10关！",
+          "audio_meaning": "Choose A or B? Only 1% reach Level 10!",
+          "text_content": "A OR B? ONLY 1% REACH LEVEL 10!",
+          "text_meaning": "A or B? Only 1% reach Level 10!"
+        },
+        {
+          "time": "4.8s",
+          "visual": "[Jump cut. Quick success flash: hand draws efficient short line, dog is protected, bees bounce off. 'PERFECT SAVE +100' pops up. Game logo 'Save the Doge' appears with download CTA button.]",
+          "audio_content": "来试试看，你能救多少只狗狗？",
+          "audio_meaning": "Come try it, how many dogs can you save?",
+          "text_content": "CAN YOU SAVE THE DOGE? DOWNLOAD NOW!",
+          "text_meaning": "Can you save the doge? Download now!"
+        }
+      ]
+    }
+  ],
+  "id": "1f33b6a6-7066-4bb4-bede-3e4953fe2bc6",
+  "created_at": "2026-04-15T03:11:48.468418Z",
+  "updated_at": "2026-04-15T03:12:21.569058Z"
+}

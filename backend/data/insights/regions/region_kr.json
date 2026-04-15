@@ -1,0 +1,19 @@
+{
+    "id": "region_kr",
+    "category": "region",
+    "name": "South Korea (Competition & Prestige)",
+    "culture_notes": [
+        "High-speed progression: Show Level 1 to Level 99 in under 5 seconds.",
+        "Visual Excellence: Extreme demand for high-quality VFX, glowing armor, and sleek UI.",
+        "The 'First/Top' Obsession: Use terms like 'No.1', 'Server First', or 'National Representative'.",
+        "Pre-registration Culture: Heavy emphasis on 'Exclusive Launch Rewards' and 'Limited Edition Skins'."
+    ],
+    "visual_specs": {
+        "typography": "Modern, bold Gothic/Sans-serif Korean fonts. Use neon or metallic textures.",
+        "pacing": "Ultra-fast. Each cut must deliver a dopamine hit of 'Growth' or 'Victory'.",
+        "celebrity_power": "Extremely high impact from K-Pop/K-Drama stars or Top-tier Game Streamers."
+    },
+    "preferred_bgm": "K-Pop style high-energy tracks or epic cinematic orchestral with fast beats.",
+    "focus": "Competitive Status > Visual Splendor > Efficiency",
+    "short_name": "KR"
+}

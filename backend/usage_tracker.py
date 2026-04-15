@@ -32,6 +32,10 @@ def _fresh_row() -> dict[str, int | str]:
         "tokens_used_total": 0,
         "tokens_from_provider_total": 0,
         "tokens_from_estimate_total": 0,
+        "script_generations_total": 0,
+        "script_generations_provider": 0,
+        "script_generations_estimate": 0,
+        "last_script_tokens": 0,
         "oracle_retrievals": 0,
         "oracle_ingests": 0,
     }
@@ -44,6 +48,10 @@ def _normalize_loaded(data: dict) -> dict[str, int | str]:
         "tokens_used_total": int(data.get("tokens_used_total", 0) or 0),
         "tokens_from_provider_total": int(data.get("tokens_from_provider_total", 0) or 0),
         "tokens_from_estimate_total": int(data.get("tokens_from_estimate_total", 0) or 0),
+        "script_generations_total": int(data.get("script_generations_total", 0) or 0),
+        "script_generations_provider": int(data.get("script_generations_provider", 0) or 0),
+        "script_generations_estimate": int(data.get("script_generations_estimate", 0) or 0),
+        "last_script_tokens": int(data.get("last_script_tokens", 0) or 0),
         "oracle_retrievals": int(data.get("oracle_retrievals", 0) or 0),
         "oracle_ingests": int(data.get("oracle_ingests", 0) or 0),
     }
@@ -72,24 +80,30 @@ def _save(data: dict[str, int | str]) -> None:
     _STATE_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
-def _add_llm_tokens(measured: int | None, fallback: int) -> None:
-    """Add one LLM call to tallies: prefer provider ``measured`` when present."""
+def _resolve_tokens(measured: int | None, fallback: int) -> tuple[int, str]:
+    """Returns (delta, source) where source is provider / estimate / none."""
     if measured is not None and measured >= 0:
-        delta = int(measured)
-        with _LOCK:
-            data = _load()
-            data["tokens_used_total"] = int(data["tokens_used_total"]) + delta
-            data["tokens_from_provider_total"] = int(data["tokens_from_provider_total"]) + delta
-            _save(data)
-        return
+        return int(measured), "provider"
     delta = max(0, int(fallback))
+    if delta > 0:
+        return delta, "estimate"
+    return 0, "none"
+
+
+def _add_llm_tokens(measured: int | None, fallback: int) -> tuple[int, str]:
+    """Add one LLM call to token tallies. Returns (delta, source)."""
+    delta, source = _resolve_tokens(measured, fallback)
     if delta == 0:
-        return
+        return 0, "none"
     with _LOCK:
         data = _load()
-        data["tokens_used_total"] = int(data["tokens_used_total"]) + delta
-        data["tokens_from_estimate_total"] = int(data["tokens_from_estimate_total"]) + delta
+        data["tokens_used_total"] = int(data["tokens_used_total"]) + int(delta)
+        if source == "provider":
+            data["tokens_from_provider_total"] = int(data["tokens_from_provider_total"]) + int(delta)
+        else:
+            data["tokens_from_estimate_total"] = int(data["tokens_from_estimate_total"]) + int(delta)
         _save(data)
+    return int(delta), source
 
 
 def record_generate_success(engine: str, measured_tokens: int | None = None) -> None:
@@ -99,11 +113,17 @@ def record_generate_success(engine: str, measured_tokens: int | None = None) -> 
         if engine == "local"
         else int(os.getenv("USAGE_TOKENS_ESTIMATE_GENERATE_CLOUD", "8500"))
     )
+    delta, source = _add_llm_tokens(measured_tokens, fb)
     with _LOCK:
         data = _load()
         data["oracle_retrievals"] = int(data["oracle_retrievals"]) + 1
+        data["script_generations_total"] = int(data["script_generations_total"]) + 1
+        data["last_script_tokens"] = int(delta)
+        if source == "provider":
+            data["script_generations_provider"] = int(data["script_generations_provider"]) + 1
+        elif source == "estimate":
+            data["script_generations_estimate"] = int(data["script_generations_estimate"]) + 1
         _save(data)
-    _add_llm_tokens(measured_tokens, fb)
 
 
 def record_extract_url_success(
@@ -141,6 +161,10 @@ def get_summary() -> dict:
     total = int(data["tokens_used_total"])
     prov = int(data["tokens_from_provider_total"])
     est = int(data["tokens_from_estimate_total"])
+    scripts = int(data["script_generations_total"])
+    avg_script = int(round(total / scripts)) if scripts > 0 else 0
+    per_script_provider = int(round(prov / scripts)) if scripts > 0 else 0
+    per_script_estimate = int(round(est / scripts)) if scripts > 0 else 0
     remaining = max(0, budget - total)
     if prov > 0 and est > 0:
         billing_quality = "mixed"
@@ -164,6 +188,13 @@ def get_summary() -> dict:
         "tokens_from_provider_today": prov,
         "tokens_from_estimate_today": est,
         "tokens_remaining_today_estimate": remaining,
+        "script_generations_today": scripts,
+        "avg_tokens_per_script_today": avg_script,
+        "avg_provider_tokens_per_script_today": per_script_provider,
+        "avg_estimate_tokens_per_script_today": per_script_estimate,
+        "last_script_tokens": int(data["last_script_tokens"]),
+        "script_generations_provider_today": int(data["script_generations_provider"]),
+        "script_generations_estimate_today": int(data["script_generations_estimate"]),
         "billing_quality": billing_quality,
         "token_note": token_note,
         "oracle_note": "检索 = 每次成功剧本生成时的向量检索；归档 = 成功 ingest 次数。",

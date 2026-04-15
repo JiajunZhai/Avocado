@@ -1,0 +1,19 @@
+{
+    "id": "region_sea",
+    "category": "region",
+    "name": "Southeast Asia (Rewards & Community)",
+    "culture_notes": [
+        "The 'Gift Code' Hook: Floating gift codes (e.g., GIFT777) are mandatory to break CTR defenses.",
+        "KOL/UGC Dominance: Local influencers reacting loudly and emotionally to Gacha pulls.",
+        "Weird/Funny Humor: Especially in Thailand, self-deprecating or slapstick humor performs exceptionally well.",
+        "Low-spec Optimization: Ads should look smooth to imply the game runs well on mid-range devices."
+    ],
+    "visual_specs": {
+        "typography": "Bright, colorful, often with thick outlines. Multi-language support (TH/VN/ID) is critical.",
+        "ui_style": "Cluttered but vibrant. Show 'Red Packets' or 'Lucky Spin' wheels prominently.",
+        "pacing": "Chaotic and energetic. Constant sound effects and visual 'surprises'."
+    },
+    "preferred_bgm": "Trending local TikTok remixes or high-pitched, energetic dance music.",
+    "focus": "Free Rewards (Gifts) > Social Interaction > Slapstick Fun",
+    "short_name": "SEA"
+}

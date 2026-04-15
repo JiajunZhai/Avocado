@@ -1,0 +1,19 @@
+{
+    "id": "angle_dev_leak_pro",
+    "category": "psychological_angle",
+    "name": "Dev Leak (Privilege & Informational Arbitrage)",
+    "logic_steps": [
+        "UGC Persona: Start with a 'low-quality' selfie video or a screen recording from a 'leaked' developer build.",
+        "The Code Entry: Show a hand typing a code like 'ADMIN999' or 'DEVFREE' into a hidden console/settings menu.",
+        "The Reward Surge: A massive, non-standard system notification shows '99999 Gems added'. The UI should look slightly 'glitched' or 'raw'.",
+        "The Scarcity CTA: 'Download via this private link before the devs fix it!' (Use countdown timer)."
+    ],
+    "visual_style": "Raw, shaky cam, or system-level screen recording. Avoid professional color grading.",
+    "psychological_triggers": [
+        "Informational Arbitrage (I know something you don't)",
+        "Greed & Scarcity",
+        "The 'Hacker' Thrill"
+    ],
+    "kpi_focus": "Extreme high CTR on TikTok/BIGO. Effective for mid-core RPG/Card games.",
+    "short_name": "DevLeak"
+}

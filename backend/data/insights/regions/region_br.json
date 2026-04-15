@@ -1,0 +1,19 @@
+{
+    "id": "region_br",
+    "category": "region",
+    "name": "Brazil (Passion & Heroism)",
+    "culture_notes": [
+        "Competitive Brotherhood: Focus on 'Clans' and 'Fighting together with friends'.",
+        "Vibrant Emotions: Characters showing extreme joy or anger. High-drama VO (Portuguese-BR).",
+        "The 'Survivor' Mentality: Thriving in chaos (very effective for Battle Royale or Zombie genres).",
+        "Local Cultural Hooks: References to 'Futebol' or local carnival-style energy where appropriate."
+    ],
+    "visual_specs": {
+        "typography": "Dynamic, slanted, 'Street-art' or 'Graffiti' inspired bold fonts.",
+        "ui_style": "Focus on the 'Kill Feed' or 'Victory' banners.",
+        "pacing": "High-octane action. Lots of camera shakes and 'Impact' effects."
+    },
+    "preferred_bgm": "Funk Carioca (for casual) or heavy Nu-Metal/Electronic (for hardcore).",
+    "focus": "Action & Impact > Social Ego > Emotional Resonance",
+    "short_name": "BR"
+}

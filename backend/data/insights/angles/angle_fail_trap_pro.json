@@ -1,0 +1,24 @@
+{
+    "id": "angle_fail_trap_pro",
+    "category": "psychological_angle",
+    "name": "Fail Trap (Advanced IQ Provocation)",
+    "logic_steps": [
+        "The 'Obvious' Hook: Within the first 2s, present a scenario with a solution so obvious that a 5-year-old could solve it.",
+        "The 'Logical Betrayal': The player's cursor/hand must hesitate, move toward the correct choice, but at the last millisecond, commit to a 'Spectacularly Logical Failure' (making it look like a miscalculation, not just random stupidity).",
+        "Exaggerated Consequence: Visual failure must be catastrophic—characters crying, towers collapsing, or massive gold loss with 'Negative Numbers' popping up.",
+        "The 'Superiority Call': Overlay text must move from 'Why?' to 'I bet you can't'. Use phrases like 'Only 1% reach Level 10' or 'Are you smarter than this bot?'."
+    ],
+    "psychological_triggers": [
+        "Cognitive Dissonance: The gap between the viewer's perceived intelligence and the onscreen performance creates an urgent need to 'correct' the outcome.",
+        "Zeigarnik Effect: An uncompleted or incorrectly completed task stays in the user's mind, driving them to download and 'finish it correctly'.",
+        "The Endowment Effect: By making the viewer think of the solution, they already feel a sense of 'ownership' over the game's progress."
+    ],
+    "regional_adaptations": {
+        "NA_US": "Focus on 'IQ' and 'Ego'. Use sarcastic captions like 'This is why we can't have nice things'.",
+        "JP": "Focus on 'Healing/Help'. Use 'Please save her!' (Moushiwake-nai feel) instead of direct IQ insults.",
+        "ME_MiddleEast": "Focus on 'Power Loss'. Show a King losing his crown due to a dumb choice."
+    },
+    "commercial_bridge": "After the failure, immediately show a 2-second 'Correct Speedrun' to prove the game is winnable, then cut to CTA.",
+    "core_emotion": "Frustration, Superiority, and Compensatory Control",
+    "short_name": "FailTrap"
+}

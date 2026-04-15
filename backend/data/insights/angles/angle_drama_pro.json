@@ -1,0 +1,19 @@
+{
+    "id": "angle_drama_pro",
+    "category": "psychological_angle",
+    "name": "Social Drama (Emotional Revenge)",
+    "logic_steps": [
+        "The Betrayal (0-3s): A high-drama social scene—cheating, being fired, or being disowned. Must be a clear 'Life Bottom' moment.",
+        "The Transformation: The character finds a way to survive/build (e.g., merging trash into a diamond, or a small shop into an empire).",
+        "The 'Face-Slap' (Revenge): The character returns to the 'Ex' or 'Ex-Boss' as a billionaire/ruler. Visualized by the antagonist's shocked face.",
+        "The Life Choice: 'What would you do?' Choose: [Revenge] or [Forgive]."
+    ],
+    "visual_style": "Exaggerated facial expressions, soap-opera lighting, dramatic music swells.",
+    "psychological_triggers": [
+        "Schadenfreude (Revenge satisfaction)",
+        "Narrative Closure Desire",
+        "Social Mobility Fantasy"
+    ],
+    "kpi_focus": "Exceptional for Female-oriented games and Hybrid-Casual Merge games.",
+    "short_name": "Drama"
+}

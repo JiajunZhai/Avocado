@@ -26,8 +26,12 @@
       "syncing": "Syncing usage...",
       "error": "Cannot connect to usage API.",
       "tokens_remaining": "Tokens Remaining",
+      "tokens_used": "Tokens Used",
       "provider_billed": "Provider Billed",
       "estimate_padding": "Estimate Padding",
+      "last_script": "Single Script Cost",
+      "avg_script": "Avg Cost / Script",
+      "sample_count": "Samples (real/est)",
       "oracle_searches": "Oracle Retrieves",
       "oracle_ingests": "Oracle Archives",
       "hover_hint": "Hover or focus to load usage."
@@ -84,17 +88,23 @@
         "label": "ANGLE SLOT",
         "title": "Psychological Induction (db.angles)"
       },
+      "output_mode": {
+        "label": "OUTPUT MODE",
+        "cn": "Chinese doc (CN editors)",
+        "en": "English doc (AI/overseas editors)"
+      },
       "pipeline_title": "SOP PIPELINE",
       "mixing_console": "MIXING CONSOLE",
       "db_synced": "LIVE SYNC",
       "synthesis_status": "Recompiling atomic slots...",
-      "alert_no_project": "Please select a Project Workspace first."
+      "alert_no_project": "Please select a Project Workspace first.",
+      "markdown_saved": "Markdown export (repo root): {{path}}"
     },
     "market": {
       "saturation": "Saturation Level",
       "high_risk": "High Risk",
       "apply_intel": "Apply Target Intelligence",
-      "title": "Live Market Intel",
+      "title": "Live Market Intel-未实现",
       "subtitle": "REAL-TIME DATA STREAM",
       "hook_genome": "HOOK GENOME",
       "creative_fatigue": "CREATIVE FATIGUE",

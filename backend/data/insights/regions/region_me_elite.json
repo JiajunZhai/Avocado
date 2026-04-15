@@ -1,0 +1,25 @@
+{
+    "id": "region_me_elite",
+    "category": "region",
+    "name": "Middle East",
+    "culture_notes": [
+        "Typography & Layout: Mandatory RTL (Right-to-Left) mirroring. Use 'Diwani' or 'Kufi' calligraphy for headers. Gold/Emerald/Royal Blue palette is the 'Standard of Wealth'.",
+        "Tribal Identity: Replace 'Clan' with 'Alliance/Kingdom/Family' terminologies. Emphasize the leader's role as a 'Protector' and 'Provider'.",
+        "Visual Taboos: Strict modesty. No religious symbols (crosses), no alcohol/pork references. Female characters should wear elegant, powerful, yet modest attire (Armor > Skin).",
+        "Digital Majlis: The game is a social hub. Highlight Chat UI, World-wide announcements, and 'Gifting' systems in the materials.",
+        "Status Symbols: Show off 'VIP Levels', 'Exclusive Frames', and 'Server-wide broadcast' effects when a whale enters or achieves something."
+    ],
+    "creative_hooks": [
+        "The 'Majestic Entrance': A high-level player entering a chat or battlefield, causing all other players to bow or react (Visualizing social dominance).",
+        "The 'Generosity' Hook: A whale distributing 'Red Packets' or resources to their alliance. In ME culture, giving is as much a flex as spending.",
+        "The 'Call to Honor': Use slogans like 'For the Glory of the Kingdom' or 'Defend your Brothers'. Focus on collective victory over individual gain.",
+        "The 'Total Customization': Showcasing gold-plated skins, luxury palace interiors, or personalized emblems that scream 'Exclusivity'."
+    ],
+    "tone_and_manner": {
+        "voiceover": "Deep, resonant male baritone with a formal Arabic (MSA) or high-end Khaliji accent. Tone must be Epic and Respectful.",
+        "pacing": "Grand and deliberate. Avoid 'frantic' cuts; use sweeping camera movements to show scale and opulence."
+    },
+    "preferred_bgm": "Cinematic fusion: Traditional Oud/Ney instruments mixed with high-end orchestral percussion (Hans Zimmer style).",
+    "focus": "Honor & Reputation (Social) > Power & Domination (PVP) > Wealth Display (Spend)",
+    "short_name": "ME"
+}

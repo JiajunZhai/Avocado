@@ -24,7 +24,7 @@
       "saturation": "大盘饱和度",
       "high_risk": "高风险预警",
       "apply_intel": "应用市场情报",
-      "title": "实时市场监控",
+      "title": "实时市场监控-未实现",
       "subtitle": "实时数据流",
       "hook_genome": "热门视效元素=",
       "creative_fatigue": "素材衰减指数",
@@ -41,8 +41,12 @@
       "syncing": "同步用量中...",
       "error": "无法连接后端用量接口。",
       "tokens_remaining": "剩余 Token",
+      "tokens_used": "今日消耗",
       "provider_billed": "计费用量",
       "estimate_padding": "估算补齐",
+      "last_script": "单个脚本消耗",
+      "avg_script": "脚本平均消耗",
+      "sample_count": "脚本样本(真实/估算)",
       "oracle_searches": "检索次数",
       "oracle_ingests": "数据归档次数",
       "hover_hint": "悬停或聚焦以加载用量。"
@@ -102,8 +106,14 @@
         "label": "动机槽位",
         "title": "用户营销动机"
       },
+      "output_mode": {
+        "label": "文档输出模式",
+        "cn": "中文文档（国内剪辑师）",
+        "en": "英文文档（AI/海外剪辑师）"
+      },
       "synthesis_status": "准备参数配置中...",
-      "alert_no_project": "请先选定一个项目结构。"
+      "alert_no_project": "请先选定一个项目结构。",
+      "markdown_saved": "已导出 Markdown（相对仓库根目录）: {{path}}"
     },
     "oracle": {
       "title": "行业知识图谱",

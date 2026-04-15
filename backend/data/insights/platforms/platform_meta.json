@@ -1,11 +1,26 @@
 {
     "id": "platform_meta",
     "category": "platform",
-    "name": "Meta (FB/IG)",
-    "specs": [
-        "Square 1:1 or 4:5 format.",
-        "Smooth transitions with high fidelity gameplay capture.",
-        "Visual oddity hook (Satisfying visual puzzle or fail).",
-        "Keep core text within center square safe zone."
-    ]
+    "name": "Meta (Facebook & Instagram)",
+    "specs": {
+        "format": [
+            "1:1 Square (Feed)",
+            "4:5 Vertical (Feed)",
+            "9:16 (Stories/Reels)"
+        ],
+        "safe_zone": "Standard center focus, but captions and 'Shop Now' bars must not overlap UI",
+        "pacing": "Moderate (3-5s per cut). Focus on 'Storytelling' over 'ADHD cuts'"
+    },
+    "platform_exclusive_logic": {
+        "Social_Proof": "Must feature 'Comment Count', 'Like Count' (visualized), or 'User Testimonials' within the creative.",
+        "The_Carousel_Hook": "Use Multi-card ads to show a 'Progression' or 'Choice' story (Slide to see what happens next).",
+        "Aesthetic_First": "Instagram requires high-end, aesthetic color grading. Facebook requires high-engagement, 'Share-worthy' content."
+    },
+    "psychological_hooks": [
+        "Community Validation: 'Join 5 million players' or 'The #1 Strategy game in your city'.",
+        "The FOMO Carousel: Each card shows a different 'Legendary Hero' with a 'Claimed' watermark on some.",
+        "Relatable Situations: Real-life scenarios (e.g., a person playing at a coffee shop) that bridge the gap between reality and game."
+    ],
+    "focus": "Trust & Community (Social Validation) > Aesthetic Appeal",
+    "short_name": "Meta"
 }

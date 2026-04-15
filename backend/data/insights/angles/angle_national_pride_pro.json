@@ -1,0 +1,19 @@
+{
+    "id": "angle_national_pride_pro",
+    "category": "psychological_angle",
+    "name": "National Pride (Tribal Competition)",
+    "logic_steps": [
+        "Global Conflict: Show a world map where one country's color is being wiped out by a rival country's color.",
+        "The Shame Factor: Display a real-time (fake) leaderboard. 'Your Country is Rank #99. [Rival Country] is Rank #1'.",
+        "The Hero Call: A local language voiceover: 'Where are our [Nationality] brothers? We need you in Sector 7!'",
+        "The Turning Point: Show a few new players joining and the map color starting to push back."
+    ],
+    "regional_adaptation": "Must use the specific flag and landmarks of the target market (e.g., Eiffel Tower for FR, Burj Khalifa for ME).",
+    "psychological_triggers": [
+        "In-group Loyalty",
+        "Competitive Ego",
+        "Fear of Collective Humiliation"
+    ],
+    "kpi_focus": "High ROAS in GCC (Middle East), Brazil, and Vietnam. Best for SLG/MMO.",
+    "short_name": "Pride"
+}

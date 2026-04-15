@@ -1,0 +1,38 @@
+{
+    "id": "platform_bigo",
+    "category": "platform",
+    "name": "BIGO Ads (Bigo Live, Likee, IMO)",
+    "specs": {
+        "format": "9:16 Vertical Video (High Priority), 1:1 Square (Feed Priority)",
+        "safe_zone": {
+            "top": "15% (Account Info Area)",
+            "bottom": "25% (CTA and Caption Area)",
+            "right": "18% (Interaction Icons Area)"
+        },
+        "max_video_duration": "30s",
+        "optimal_video_duration": "15s-20s"
+    },
+    "native_visual_elements": [
+        "Live-stream UI overlays: Floating hearts, dynamic gift animations, scrolling viewer comments",
+        "Real-time Face-cam: Circular or square inset of a 'Streamer' reacting to the game",
+        "Social Indicators: 'Online' green dots, fake 'New Message' or 'Incoming Call' pop-ups for IMO",
+        "Status Symbols: VIP frames, gilded notification bars, and server-wide announcement banners"
+    ],
+    "psychological_hooks": [
+        "The 'Social Companion' Hook: A real person looking into the camera saying 'Play with me' (Direct POV)",
+        "The 'Social Pride' Hook: Showing how a player dominates the leaderboards or receives 'gifts' from others",
+        "The 'Exclusive Club' Hook: Using words like 'Elite', 'VIP-Only', or 'Secret' to trigger the desire for status",
+        "The 'Urgent Call' Hook: Mocking an app notification that the user's base/alliance is under attack"
+    ],
+    "platform_logic": {
+        "audio_strategy": "High-energy voiceovers with a 'Broadcast' persona. Localized slang is mandatory",
+        "visual_tone": "High saturation, bright lighting, high-contrast text overlays",
+        "cta_style": "Social-action oriented (e.g., 'Join My Clan', 'Challenge Me', 'Talk to Me')"
+    },
+    "algorithm_optimization": {
+        "ctr_triggers": "Use real-human faces in the first 1s to lower ad-fatigue",
+        "retention_logic": "Feature 'Gift-giving' or 'Loot-opening' moments at the 5s mark",
+        "conversion_focus": "Align CTA with the user's desire for social connection or territorial dominance"
+    },
+    "short_name": "Bigo"
+}

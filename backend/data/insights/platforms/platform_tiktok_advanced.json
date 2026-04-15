@@ -1,0 +1,27 @@
+{
+    "id": "platform_tiktok_advanced",
+    "category": "platform",
+    "name": "TikTok (Community & Attention Arbitrage)",
+    "specs": [
+        "Format: 9:16 Vertical. Must look like 'Unpolished UGC'. Avoid 'Studio-clean' graphics. Use +10% Saturation & +5% Contrast for visual pop.",
+        "Visual Safety: Strict 70% Central Safe Zone. Critical info must be centered at [Y: 30%-60%] to avoid interference from 'For You' UI overlays.",
+        "Hook Timing: The 'Instant Payoff' must occur at 0.0s-0.6s. Use 'Physical Shock' (loud noise/fast motion) or 'Social Disruption' (controversial face-to-camera statement).",
+        "Pacing: Hyper-fast jump cuts every 0.8s-1.2s. Use 'Dynamic Zoom' on key interactions to simulate manual camera focus (human feel).",
+        "Interactive Elements: Fake 'System Alerts', 'Notification Banners', or 'Custom Stickers' that mimic native OS/Platform prompts to bypass ad-defense."
+    ],
+    "algorithm_triggers": [
+        "The 'Infinite Loop' Logic: Match the final 0.5s audio frequency and visual motion with the first 0.5s to force +100% VTR (View-Through Rate).",
+        "Audio Supremacy: 70% of conversion comes from sound. Use 'Platform Native TTS' (e.g., Jessie) and 'Contextual ASMR' (haptic sounds) synchronized with visual cuts.",
+        "SEO & Keyword Overlay: Use native TikTok font captions containing high-ranking search keywords (e.g., 'Strategy', 'IQ Test') to trigger algorithmic indexing."
+    ],
+    "creative_strategies": [
+        "The 'Reply-to-Hater' Hook: Start with a 'Social Proof' sticker showing a negative comment (e.g., 'This is a scam!') and prove them wrong with high-speed gameplay.",
+        "The 'Frustration-Solution' Split Screen: Top 50% shows 'Noob' failing a simple task; Bottom 50% shows 'Pro' solving it via 'Satisfying' gameplay. Trigger the viewer's 'Correction Urge'.",
+        "The 'IRL Immersion' POV: Mobile gameplay recorded in a reflection (mirror) or held in hands in a relatable environment (Subway, Office, Bed) to maximize authenticity.",
+        "The 'Glitch' Hook: Incorporate 0.2s of fake 'Screen Glitch' or 'Pause' at 2.0s to trick the user into tapping the screen, which registers as engagement."
+    ],
+    "cta_logic": {
+        "native_cta": "Avoid 'Download Now'. Use 'Join the 1% challenge', 'Check your Strategy IQ', or 'Claim before nerf' with a pulsing downward finger emoji."
+    },
+    "short_name": "TikTok"
+}

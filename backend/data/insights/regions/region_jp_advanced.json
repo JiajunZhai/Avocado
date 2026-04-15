@@ -1,0 +1,25 @@
+{
+    "id": "region_jp_advanced",
+    "category": "region",
+    "name": "Japan",
+    "culture_notes": [
+        "Visual: 'Baraeti' (Variety Show) style layout. Not just thick borders, but colorful, layered captions that explain 'Why this is amazing'.",
+        "Typography: Mix 'Mincho' (elegant/serious) for lore and 'Kanteiryu/Brush' (impactful) for combat/gacha results.",
+        "Social Proof: Must include 'Ranking indicators' (e.g., App Store #1, 5-star rating) or 'User Reviews' style overlays to lower psychological resistance.",
+        "Character focus: Use 'Seiyuu' (CV) name tags prominently. In Japan, the VA is often a bigger draw than the gameplay itself.",
+        "The 'Gentei' (Limited) Hook: Emphasize 'Time-limited' or 'Pre-registration exclusive' rewards using red/gold flashing effects."
+    ],
+    "creative_hooks": [
+        "The 'Failed Choice' vs 'Professional Success' (Classic but still high CTR in JP hyper-casual/sim).",
+        "The 'Comparison' hook: Showing a 'Common Player' vs a 'Pro Player' using the Gacha results.",
+        "ASMR/Satisfying sounds: High-quality UI clicking sounds and Gacha 'rainbow' flash sound effects.",
+        "Voiceover: Start with a high-energy 'Iku zo!' or a soft, inviting character greeting to break the scroll."
+    ],
+    "tone_and_manner": {
+        "politeness": "High (Desu/Masu). Use 'O-kyakusama' mindset in service-related text.",
+        "trust_building": "Transparency in Gacha rates and clear 'How to play' instructions (Tutorial-style ads)."
+    },
+    "preferred_bgm": "High-tempo J-Pop/Anime Rock for action; Lofi/Piano for 'Iyashikei' (healing) or Simulation games.",
+    "focus": "Character Emotional Bond (Engagement) > Gacha Thrill (Monetization) > Competitive Status (Retention)",
+    "short_name": "JP"
+}

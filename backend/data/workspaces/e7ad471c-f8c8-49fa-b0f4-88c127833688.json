@@ -7,7 +7,466 @@
     "value_hooks": "- Realistic ASMR sounds with headphones for immersive relaxation, including crunches, clicks, and soothing notes.\n- Trending toys like Pop-it fidgets and hydraulic press for hands-on destruction and tactile satisfaction without real mess.\n- Brain teasers and creative modes (e.g., Tic-Tac-Toe, xylophone) to gently stimulate the mind and offer distraction.\n- Pocket-sized therapy for quick breaks from anxiety, work, or boredom, designed as a portable stress relief tool."
   },
   "market_targets": [],
-  "history_log": [],
+  "history_log": [
+    {
+      "id": "SOP-6C84DE",
+      "timestamp": "2026-04-15T04:09:47.065738Z",
+      "engine": "local",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "v",
+          "audio_content": "a",
+          "audio_meaning": "am",
+          "text_content": "t",
+          "text_meaning": "tm"
+        }
+      ]
+    },
+    {
+      "id": "SOP-9538C6",
+      "timestamp": "2026-04-15T04:12:51.097600Z",
+      "engine": "mock",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "The 'Obvious' Hook: Within the first 2s, present a scenario with a solution so obvious that a 5-year-old could solve it.",
+          "audio_content": "Native Voiceover (Simulated)",
+          "audio_meaning": "Oh no!",
+          "text_content": "Local text",
+          "text_meaning": "Alert"
+        }
+      ]
+    },
+    {
+      "id": "SOP-E4361E",
+      "timestamp": "2026-04-15T04:12:51.164283Z",
+      "engine": "local",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "v",
+          "audio_content": "a",
+          "audio_meaning": "am",
+          "text_content": "t",
+          "text_meaning": "tm"
+        }
+      ]
+    },
+    {
+      "id": "SOP-AC83C8",
+      "timestamp": "2026-04-15T04:13:08.376867Z",
+      "engine": "mock",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "The 'Obvious' Hook: Within the first 2s, present a scenario with a solution so obvious that a 5-year-old could solve it.",
+          "audio_content": "Native Voiceover (Simulated)",
+          "audio_meaning": "Oh no!",
+          "text_content": "Local text",
+          "text_meaning": "Alert"
+        }
+      ]
+    },
+    {
+      "id": "SOP-5594CA",
+      "timestamp": "2026-04-15T04:13:51.803673Z",
+      "engine": "local",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "v",
+          "audio_content": "a",
+          "audio_meaning": "am",
+          "text_content": "t",
+          "text_meaning": "tm"
+        }
+      ]
+    },
+    {
+      "id": "SOP-BC4ABD",
+      "timestamp": "2026-04-15T04:13:51.883593Z",
+      "engine": "mock",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "The 'Obvious' Hook: Within the first 2s, present a scenario with a solution so obvious that a 5-year-old could solve it.",
+          "audio_content": "Native Voiceover (Simulated)",
+          "audio_meaning": "Oh no!",
+          "text_content": "Local text",
+          "text_meaning": "Alert"
+        }
+      ]
+    },
+    {
+      "id": "SOP-1697A2",
+      "timestamp": "2026-04-15T04:14:06.438946Z",
+      "engine": "mock",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "The 'Obvious' Hook: Within the first 2s, present a scenario with a solution so obvious that a 5-year-old could solve it.",
+          "audio_content": "Native Voiceover (Simulated)",
+          "audio_meaning": "Oh no!",
+          "text_content": "Local text",
+          "text_meaning": "Alert"
+        }
+      ]
+    },
+    {
+      "id": "SOP-618868",
+      "timestamp": "2026-04-15T04:14:06.547196Z",
+      "engine": "mock",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "The 'Obvious' Hook: Within the first 2s, present a scenario with a solution so obvious that a 5-year-old could solve it.",
+          "audio_content": "Native Voiceover (Simulated)",
+          "audio_meaning": "Oh no!",
+          "text_content": "Local text",
+          "text_meaning": "Alert"
+        }
+      ]
+    },
+    {
+      "id": "SOP-1E161F",
+      "timestamp": "2026-04-15T04:30:27.989304Z",
+      "engine": "cloud",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_tiktok_advanced",
+        "angle": "angle_rescue_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "Cold open: Blue/grey palette, shaky cam. A cartoon character (cute animal) shivering in snow, teeth chattering. Warm goal: Cozy cabin with fireplace visible in distance. Loud 'BRRRR' sound effect.",
+          "audio_content": "Oh no! This little guy is freezing! We gotta warm him up, quick!",
+          "audio_meaning": "哦不！这个小家伙快冻僵了！我们得赶紧让他暖和起来！",
+          "text_content": "FREEZING! NEED HELP NOW!",
+          "text_meaning": "快冻僵了！急需帮助！"
+        },
+        {
+          "time": "1s",
+          "visual": "Jump cut to three tools hovering: a blanket (correct), a pop-it fidget toy (wrong), and a bucket of ice (disastrously wrong). Cursor hovers over blanket, then drags the ice bucket toward character. Dynamic zoom on ice bucket.",
+          "audio_content": "Hmm... blanket? Nah. How about... THIS!",
+          "audio_meaning": "嗯…毯子？不。试试…这个！",
+          "text_content": "CHOICE: BLANKET vs. POP-IT vs. ICE",
+          "text_meaning": "选择：毯子 vs. 解压玩具 vs. 冰"
+        },
+        {
+          "time": "2s",
+          "visual": "Character gets doused with ice, turns into an ice block with comical 'CLINK' sound. Face-cam inset of influencer reacting with exaggerated 'facepalm' and laughter.",
+          "audio_content": "Oops! That made it WORSE! Now he's an ice cube!",
+          "audio_meaning": "哎呀！更糟了！他现在成冰块了！",
+          "text_content": "EPIC FAIL!",
+          "text_meaning": "史诗级失败！"
+        },
+        {
+          "time": "3s",
+          "visual": "Cut to black screen with fake 'Low Battery' sticker (mimics OS alert). Text flashes: 'Only YOU can save them'.",
+          "audio_content": "Only YOU can save him! Tap to download and try again!",
+          "audio_meaning": "只有你能救他！点击下载再试一次！",
+          "text_content": "Only YOU can save them!",
+          "text_meaning": "只有你能救他们！"
+        },
+        {
+          "time": "4s",
+          "visual": "Fast transition to vibrant, saturated game UI. Show pop-it fidget toy being popped with ASMR crunch sounds. Dynamic zoom on pops.",
+          "audio_content": "In Antistress, get it RIGHT with 20+ relaxing toys! Pop away stress like this!",
+          "audio_meaning": "在《解压大师》里，用20多种放松玩具做对选择！像这样弹出压力！",
+          "text_content": "20+ STRESS RELIEF TOYS!",
+          "text_meaning": "20多种解压玩具！"
+        },
+        {
+          "time": "5s",
+          "visual": "Jump cut to hydraulic press crushing objects with satisfying ASMR crunches. Show brain teaser (Tic-Tac-Toe) being solved quickly.",
+          "audio_content": "Smash, solve, and relax—no mess, all fun! Your pocket therapy for anxiety breaks.",
+          "audio_meaning": "粉碎、解决、放松——没有混乱，全是乐趣！你的口袋疗法，应对焦虑休息。",
+          "text_content": "SMASH & SOLVE = RELAX",
+          "text_meaning": "粉碎与解决 = 放松"
+        },
+        {
+          "time": "6s",
+          "visual": "End screen: App icon with 'DOWNLOAD FREE' button. Face-cam inset of influencer smiling and nodding.",
+          "audio_content": "Download Antistress now—free, with all the toys you need to chill out!",
+          "audio_meaning": "立即下载《解压大师》——免费，包含所有你需要放松的玩具！",
+          "text_content": "DOWNLOAD FREE - ALL TOYS INCLUDED",
+          "text_meaning": "免费下载 - 包含所有玩具"
+        }
+      ]
+    },
+    {
+      "id": "SOP-547434",
+      "timestamp": "2026-04-15T06:19:38.881263Z",
+      "engine": "local",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "v",
+          "visual_meaning": "画面中文",
+          "audio_content": "a",
+          "audio_meaning": "am（语气：自然口语；节奏：短句有力）",
+          "text_content": "t",
+          "text_meaning": "tm",
+          "direction_note": "导演提示",
+          "sfx_transition_note": "音效提示"
+        }
+      ]
+    },
+    {
+      "id": "SOP-8150D3",
+      "timestamp": "2026-04-15T06:19:38.945025Z",
+      "engine": "mock",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "The 'Obvious' Hook: Within the first 2s, present a scenario with a solution so obvious that a 5-year-old could solve it.",
+          "visual_meaning": "中文画面说明：突出核心玩法动作与结果反馈，避免仿系统原生 UI 误导。",
+          "audio_content": "Native Voiceover (Simulated)",
+          "audio_meaning": "哦不！（语气：夸张但不刺耳；节奏：短促）",
+          "text_content": "Local text",
+          "text_meaning": "提示文案",
+          "direction_note": "导演提示：前 2 秒快节奏钩子，随后切入真实玩法并放慢镜头展示反馈。",
+          "sfx_transition_note": "后期提示：失误点后插入 0.15-0.25 秒静音真空，再进 ASMR 或主 BGM。"
+        }
+      ]
+    },
+    {
+      "id": "SOP-004342",
+      "timestamp": "2026-04-15T06:37:26.003854Z",
+      "engine": "local",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "v",
+          "visual_meaning": "画面中文",
+          "audio_content": "a",
+          "audio_meaning": "am（语气：自然口语；节奏：短句有力）",
+          "text_content": "t",
+          "text_meaning": "tm",
+          "direction_note": "导演提示",
+          "sfx_transition_note": "音效提示"
+        }
+      ]
+    },
+    {
+      "id": "SOP-8E9DDB",
+      "timestamp": "2026-04-15T06:37:51.541185Z",
+      "engine": "mock",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "Action",
+          "visual_meaning": "中文画面说明：突出核心玩法动作与结果反馈，避免仿系统原生 UI 误导。",
+          "audio_content": "Native Voiceover (Simulated)",
+          "audio_meaning": "哦不！（语气：夸张但不刺耳；节奏：短促）",
+          "text_content": "Local text",
+          "text_meaning": "提示文案",
+          "direction_note": "导演提示：前 2 秒快节奏钩子，随后切入真实玩法并放慢镜头展示反馈。",
+          "sfx_transition_note": "后期提示：失误点后插入 0.15-0.25 秒静音真空，再进 ASMR 或主 BGM。"
+        }
+      ]
+    },
+    {
+      "id": "SOP-30FE07",
+      "timestamp": "2026-04-15T06:39:44.681425Z",
+      "engine": "local",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "v",
+          "visual_meaning": "画面中文",
+          "audio_content": "a",
+          "audio_meaning": "am（语气：自然口语；节奏：短句有力）",
+          "text_content": "t",
+          "text_meaning": "tm",
+          "direction_note": "导演提示",
+          "sfx_transition_note": "音效提示"
+        }
+      ]
+    },
+    {
+      "id": "SOP-F462DD",
+      "timestamp": "2026-04-15T06:40:12.323702Z",
+      "engine": "mock",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "Action",
+          "visual_meaning": "中文画面说明：突出核心玩法动作与结果反馈，避免仿系统原生 UI 误导。",
+          "audio_content": "Native Voiceover (Simulated)",
+          "audio_meaning": "哦不！（语气：夸张但不刺耳；节奏：短促）",
+          "text_content": "Local text",
+          "text_meaning": "提示文案",
+          "direction_note": "导演提示：前 2 秒快节奏钩子，随后切入真实玩法并放慢镜头展示反馈。",
+          "sfx_transition_note": "后期提示：失误点后插入 0.15-0.25 秒静音真空，再进 ASMR 或主 BGM。"
+        }
+      ]
+    },
+    {
+      "id": "SOP-C37446",
+      "timestamp": "2026-04-15T06:45:50.692315Z",
+      "engine": "local",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "v",
+          "visual_meaning": "画面中文",
+          "audio_content": "a",
+          "audio_meaning": "am（语气：自然口语；节奏：短句有力）",
+          "text_content": "t",
+          "text_meaning": "tm",
+          "direction_note": "导演提示",
+          "sfx_transition_note": "音效提示"
+        }
+      ]
+    },
+    {
+      "id": "SOP-7DE22B",
+      "timestamp": "2026-04-15T06:46:19.508597Z",
+      "engine": "mock",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "Action",
+          "visual_meaning": "中文画面说明：突出核心玩法动作与结果反馈，避免仿系统原生 UI 误导。",
+          "audio_content": "Native Voiceover (Simulated)",
+          "audio_meaning": "哦不！（语气：夸张但不刺耳；节奏：短促）",
+          "text_content": "Local text",
+          "text_meaning": "提示文案",
+          "direction_note": "导演提示：前 2 秒快节奏钩子，随后切入真实玩法并放慢镜头展示反馈。",
+          "sfx_transition_note": "后期提示：失误点后插入 0.15-0.25 秒静音真空，再进 ASMR 或主 BGM。"
+        }
+      ]
+    },
+    {
+      "id": "SOP-45F2D4",
+      "timestamp": "2026-04-15T06:52:11.792071Z",
+      "engine": "local",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "v",
+          "visual_meaning": "画面中文",
+          "audio_content": "a",
+          "audio_meaning": "am（语气：自然口语；节奏：短句有力）",
+          "text_content": "t",
+          "text_meaning": "tm",
+          "direction_note": "导演提示",
+          "sfx_transition_note": "音效提示"
+        }
+      ]
+    },
+    {
+      "id": "SOP-6AA593",
+      "timestamp": "2026-04-15T06:52:38.303479Z",
+      "engine": "mock",
+      "recipe": {
+        "region": "region_us_prime",
+        "platform": "platform_applovin_unity",
+        "angle": "angle_fail_trap_pro"
+      },
+      "script": [
+        {
+          "time": "0s",
+          "visual": "Action",
+          "visual_meaning": "中文画面说明：突出核心玩法动作与结果反馈，避免仿系统原生 UI 误导。",
+          "audio_content": "Native Voiceover (Simulated)",
+          "audio_meaning": "哦不！（语气：夸张但不刺耳；节奏：短促）",
+          "text_content": "Local text",
+          "text_meaning": "提示文案",
+          "direction_note": "导演提示：前 2 秒快节奏钩子，随后切入真实玩法并放慢镜头展示反馈。",
+          "sfx_transition_note": "后期提示：失误点后插入 0.15-0.25 秒静音真空，再进 ASMR 或主 BGM。"
+        }
+      ]
+    }
+  ],
   "id": "e7ad471c-f8c8-49fa-b0f4-88c127833688",
   "created_at": "2026-04-14T09:06:59.845005Z",
   "updated_at": "2026-04-14T09:06:59.845014Z"

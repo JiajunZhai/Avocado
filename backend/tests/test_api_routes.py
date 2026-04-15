@@ -2,13 +2,13 @@ import main
 from ollama_client import LocalLLMResult
 
 def _base_generate_payload(engine: str = "cloud"):
+    """Valid body for POST /api/generate (matches workspace + insight JSON ids in repo fixtures)."""
     return {
-        "title": "API Test Title",
-        "usp": "Fast Paced",
-        "platform": "TikTok",
-        "angle": "Evolution",
-        "region": "NA/EU",
-        "engine": engine
+        "project_id": "e7ad471c-f8c8-49fa-b0f4-88c127833688",
+        "region_id": "region_us_prime",
+        "platform_id": "platform_applovin_unity",
+        "angle_id": "angle_fail_trap_pro",
+        "engine": engine,
     }
 
 def _valid_script_result():
@@ -25,10 +25,13 @@ def _valid_script_result():
             {
                 "time": "0s",
                 "visual": "v",
+                "visual_meaning": "画面中文",
                 "audio_content": "a",
                 "audio_meaning": "am",
                 "text_content": "t",
-                "text_meaning": "tm"
+                "text_meaning": "tm",
+                "direction_note": "导演提示",
+                "sfx_transition_note": "音效提示",
             }
         ],
         "psychology_insight": "insight",
@@ -48,6 +51,9 @@ def test_api_generate_local_success(client, monkeypatch):
     data = response.json()
     assert data["hook_score"] == 80
     assert data["citations"] == ["src1"]
+    assert data.get("markdown_path")
+    assert data["markdown_path"].startswith("@OUT/")
+    assert data["markdown_path"].endswith(".md")
 
 def test_api_generate_local_parse_failure(client, monkeypatch):
     monkeypatch.setattr(main, "retrieve_context", lambda *_args, **_kwargs: ("", []))
@@ -87,11 +93,13 @@ def test_api_generate_cloud_fallback_when_no_key(client, monkeypatch):
     response = client.post("/api/generate", json=_base_generate_payload(engine="cloud"))
     assert response.status_code == 200
     data = response.json()
-    assert data["hook_score"] == 92
+    assert data["hook_score"] == 95
+    assert data.get("markdown_path", "").startswith("@OUT/")
 
 def test_api_extract_url_success(client, monkeypatch):
     monkeypatch.setattr(main, "fetch_playstore_data", lambda _url: {"success": True, "title": "GameA"})
-    monkeypatch.setattr(main, "extract_usp_via_llm_with_usage", lambda *_args: ("USP A", None, False))
+    monkeypatch.setattr("scraper.extract_usp_via_llm_with_usage", lambda *_args: ("USP A", None, False))
+    monkeypatch.setattr(main, "cloud_client", None)
     response = client.post("/api/extract-url", json={"url": "https://x", "engine": "cloud"})
     assert response.status_code == 200
     data = response.json()

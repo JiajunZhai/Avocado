@@ -1,8 +1,8 @@
 # 🧠 Project Memory Bank / Context Document
 
 **Project Name**: AdCreative AI Script Generator
-**Last Updated**: 2026-04-14
-**Version Level**: Stability Patch V1.7 (Director button system + blue-forward palette + Tailwind v4 @apply constraints)
+**Last Updated**: 2026-04-15
+**Version Level**: Stability Patch V2.1 (CN storyboard de-dup execution layout)
 
 This document serves as the global memory bank and active context tracker for the project. It outlines exactly where the project stands, structural choices, and development conventions to assist future AI/developer context loading.
 
@@ -36,6 +36,8 @@ The project follows a decoupled **Monorepo** structure.
 - **Data Validation**: `Pydantic` models (`GenerateScriptRequest`, `GenerateScriptResponse`).
 - **Server**: `uvicorn` (Dev command: `python -m uvicorn main:app --reload`).
 - **State**: Handlers are mostly stateless; Oracle/RAG (`refinery.py`) persists a local TF-IDF-backed store. **Daily usage** for the quota UI persists in `backend/usage_counters.json` (gitignored): Oracle retrieval/ingest counts + LLM token tallies (`backend/usage_tracker.py`). **`GET /api/usage/summary`** returns budget, remaining, provider vs estimate token breakdown, and `billing_quality`. Cloud DeepSeek responses record **`response.usage.total_tokens`** when present (`backend/usage_tokens.py`); Ollama returns the same via OpenAI-compatible `usage` when the shim exposes it; otherwise env-based fallbacks apply.
+- **SOP / Lab synthesis export**: On successful **`POST /api/generate`** (local, cloud, or mock fallback), **`backend/md_export.py`** writes UTF-8 Markdown to **repository root** `@OUT/{project_id}/{script_id}.md` and the JSON response includes optional **`markdown_path`** (POSIX-style path from repo root, e.g. `@OUT/uuid/SOP-ABC123.md`). Write failures are logged only; they do not fail the HTTP response. **`.gitignore`** ignores `@OUT/**/*.md`; `@OUT/.gitkeep` keeps the folder in version control.
+- **Local generate path**: **`generate_script_local`** in `main.py` calls `retrieve_context` + `ollama_client.generate_with_local_llm`; structured local failures return **HTTP 502** with `error_code` / `error_message` / `raw_excerpt` (see `test_api_routes.py`). Mock branch tolerates insight JSON where `platform.specs` is a **dict** (not only a list) when deriving `editing_rhythm` / first visual step.
 
 ---
 
@@ -122,6 +124,54 @@ The project follows a decoupled **Monorepo** structure.
     - After **档案同步** succeeds (`extractionStatus === 'confirm'`): **hide** the Play URL input block (shown only in `idle`); render **`ProjectArchiveCard`** from parsed archive (`usedStructuredJson` toggles DNA badge).
     - **确认配置** (`wizard-confirm-extract`): if structured JSON was parsed → `setUsp(buildUspEnContext(…))` so generation uses **EN context**; else keep raw `extracted_usp` string (e.g. offline mock).
     - **重新扫描**: reset to `idle`, clear `tempData`; **驳回** also clears `tempData`.
+- **[Phase 15] `@OUT` Markdown export + Lab response path (2026-04-15)**:
+  - **`backend/md_export.py`**: `synthesis_to_markdown` + `export_markdown_after_generate`; output directory **`repo_root() / "@OUT" / {project_id}`** (repo root = parent of `backend/`).
+  - **`backend/main.py`**: `GenerateScriptResponse.markdown_path`; `finalize_response()` after each successful generate; **`generate_script_local`** implemented for `engine=local` (RAG + local LLM, citations merge, 502 on parse/schema errors).
+  - **`frontend/src/pages/Lab.tsx`** + **i18n** (`lab.markdown_saved`): surfaces `markdown_path` when present after synthesis.
+  - **Tests**: `tests/test_md_export.py`; `test_api_routes.py` / `test_business_flow_e2e.py` use valid `project_id` + insight ids (`data/workspaces`, `data/insights`).
+- **[Phase 16] Quota popup analytics + real usage hardening (2026-04-15)**:
+  - **`backend/usage_tracker.py`**: usage payload expanded with script-level metrics: `script_generations_today`, `last_script_tokens`, `avg_tokens_per_script_today`, provider/estimate sample counters, and per-script provider/estimate averages.
+  - **`backend/main.py`**: cloud extract usage now reads tokens via **`total_tokens_from_completion(response)`** (统一口径，避免 provider SDK usage 结构差异).
+  - **`frontend/src/layout/MainLayout.tsx`**: quota popover now displays **today total used**, **single script cost**, **avg cost/script**, and **sample count (provider/estimate split)** in addition to remaining/budget and Oracle counters.
+  - **i18n**: new keys in `frontend/src/i18n/locales/zh.json` + `en.json` (`quota.tokens_used`, `last_script`, `avg_script`, `sample_count`).
+  - **Tests**: `backend/tests/test_usage_api.py` extended for new fields + derived script stats; `backend/tests/test_api_routes.py` extract success test monkeypatch adjusted to `scraper.extract_usp_via_llm_with_usage`.
+- **[Phase 17] Knowledge path unification + export delivery hardening (2026-04-15)**:
+  - **Unified knowledge layout**:
+    - Added `backend/knowledge_paths.py` as the single source of truth for KB paths.
+    - New canonical paths:
+      - factors: `backend/data/knowledge/factors`
+      - vector store: `backend/data/knowledge/vector_store/local_storage.json`
+    - Automatic compatibility migration on startup/use:
+      - `backend/data/insights` -> `backend/data/knowledge/factors`
+      - `backend/chroma_db/local_storage.json` -> `backend/data/knowledge/vector_store/local_storage.json`
+  - **Bilingual output mode**:
+    - `GenerateScriptRequest` now supports `output_mode` (`cn` / `en`).
+    - `Lab.tsx` adds output mode selector and persists it to `localStorage` (`sop_output_mode`).
+    - `md_export.py` renders CN/EN document templates based on mode.
+  - **Localization behavior for exported Markdown**:
+    - In CN mode, document explanatory fields are translated to Chinese.
+    - In EN mode, document explanatory fields are translated to English.
+    - `audio_content` and `text_content` are preserved as original source text in both modes.
+  - **Delivery naming convention**:
+    - Exported file names now follow:
+      - `<LANG>_<Game>_<Region>_<Platform>_<Strategy>_<SOPID>.md`
+    - Name resolution priority:
+      - `*_short` -> `*_name` -> raw id
+    - Added compacting/sanitization for readability and Windows-safe filenames.
+  - **`short_name` rollout**:
+    - Added `short_name` fields across insight factor JSON under `backend/data/insights/{regions,platforms,angles}` for concise naming.
+    - Example usage in filenames: `US`, `TikTok`, `Rescue` (when configured).
+- **[Phase 18] CN storyboard execution-only rows (2026-04-15)**:
+  - **`backend/md_export.py`** CN mode was simplified to avoid bilingual duplication in per-shot sections.
+  - CN shot rows now output execution-focused fields only:
+    - `画面` (prefer `visual_meaning`, fallback `visual`)
+    - `配音`
+    - `贴纸字` (only when non-empty)
+    - `导演提示（中文）`
+    - `音效/转场提示（中文）`
+  - Removed in CN mode: `画面释义（中文）` / `配音释义` / `贴纸释义`.
+  - EN mode remains unchanged (keeps note-style bridge fields for cross-language review workflows).
+  - **Tests**: `backend/tests/test_md_export.py` updated to assert removed CN rows are absent.
 - **[Phase 14] Director button system + palette + Tailwind v4 CSS hardening (2026-04-13–14)**:
   - **`frontend/src/index.css`**: `btn-director-*` + `success` tokens; `header-module-tab` / `nav-director-link--active`; segmented control border aligned with secondary outline weight. **Tailwind v4 limitation**: `@apply` inside `@layer utilities` **must not** reference other custom utilities from the same file (e.g. `transition-director-*`, `ring-focus-brand`, `shadow-elev-1`). Mitigations in tree: duplicate **focus ring** utilities on button rules; **transition** as raw `transition-property` / `var(--duration-*)`; **nav active shadow** inlined instead of `@apply shadow-elev-1`. Standalone classes `.ring-focus-brand`, `.transition-director-colors`, `.transition-director-transform` remain for TSX.
   - **`MainLayout.tsx`**: New Script / module tabs / Strategy Matrix / ghost nav actions aligned to the button system; sidebar **logo** uses neutral `bg-on-surface text-on-primary` (not primary-dim); active route icons use **`text-secondary-fixed-dim`**.
@@ -135,16 +185,19 @@ The project follows a decoupled **Monorepo** structure.
   - **`backend/ollama_client.py`**: **`LocalLLMResult(output, total_tokens)`** returned by **`generate_with_local_llm`**; tests monkeypatch must wrap payloads in `LocalLLMResult`.
   - **Env tuning**: `USAGE_DAILY_TOKEN_BUDGET`, `USAGE_TOKENS_ESTIMATE_GENERATE_CLOUD` / `_LOCAL`, `USAGE_TOKENS_ESTIMATE_EXTRACT` when provider `usage` is missing.
 
-### ✅ Latest Validation Snapshot (2026-04-14)
+### ✅ Latest Validation Snapshot (2026-04-15)
 
-- Backend test suite: last recorded `pytest tests -q` → **31 passed** (includes `test_usage_api`, `test_usage_tokens`); re-run after backend edits.
-- Frontend: `npm run build` → **success** after Phase 14 CSS/TSX changes; Playwright core flow → **passed** on a healthy local run (timing varies with network / LLM).
+- Backend: run `pytest tests/ -q` excluding known-broken collectors if any (e.g. `test_engine.py` import drift); **`test_api_routes`**, **`test_business_flow_e2e`**, **`test_md_export`**, **`test_ollama_client`**, **`test_refinery`**, **`test_scraper`** exercised after Phase 15; full `tests/` collection may fail until `test_engine.py` is repaired.
+- Frontend: `npm run build` → **success** (includes Lab i18n + unused-import cleanups where needed).
 - Outcomes:
   - Local/cloud generation failures stay explicit in API and UI; PDF export blocked on bad payloads.
   - Extraction returns structured bilingual JSON (+ metadata tail); local LLM validates schema or falls back to rules.
   - E2E covers the main Generator business path against real backend + Vite.
   - Sidebar reflects Generator/Oracle async work; quota card reflects server-tracked usage and provider vs estimate token split when available.
   - UI: consistent director button classes; primary brand reads blue (not purple-heavy); `npm run build` must stay green after touching `index.css` compound utilities.
+  - Lab/SOP: successful `/api/generate` produces on-disk Markdown under **`@OUT/`** and returns **`markdown_path`** for UI display.
+  - Quota popover: exposes operational metrics for cost governance (per-call + average + sample size), with provider-vs-estimate transparency for mixed billing days.
+  - CN markdown storyboard is now shorter and production-oriented, reducing repeated explanatory lines for Chinese editor workflows.
 
 ### ⏳ Imminent Next Steps (To-Do List)
 
@@ -163,27 +216,41 @@ The project follows a decoupled **Monorepo** structure.
 - **Generation Failure Policy**: The frontend no longer fabricates mock scripts when generation fails. Backend/LLM failures must remain explicit so operators can diagnose local model/network/schema issues without polluting downstream exports.
 - **Extraction Strategy Policy**: `extract_usp_via_llm` / **`extract_usp_via_llm_with_usage`**: **local** path = Ollama + `EXTRACT_USP_VIA_LLM_SYSTEM_PROMPT` with strict JSON validation (returns **`LocalLLMResult`** from `generate_with_local_llm`); **cloud** path = deterministic bilingual director-archive rules (no random hooks, no LLM spend). `extracted_usp` is a string: leading JSON + optional store metadata sections. **Frontend** mirrors backend split in `directorArchive.ts`; **confirmed** URL flows set React `usp` state to **`buildUspEnContext`** when JSON is valid so `/api/generate` receives English-only structured context.
 - **Usage & billing policy**: Token counts prefer **provider `usage`** (OpenAI-compatible completions). **Mock / no-key** generation still increments **estimate** buckets. **`/api/extract-url`** billing: cloud rule path → no tokens; local-only LLM success → measured or extract fallback estimate; local fail → rule fallback → **`used_llm=False`** → no extract token charge.
+- **Quota popup metrics policy**: `last_script_tokens` / `avg_tokens_per_script_today` are based on successful `/api/generate` calls only (not extract/ingest). Mixed days must disclose provider/estimate sample split to prevent “false precision” in cost interpretation.
 - **Windows / uvicorn logging**: Avoid non-ASCII `print` of uncontrolled prompt text without safe encoding; use `_print_console_safe` or ASCII-only logs for hot paths.
 - **RTL Conditional Rendering**: The UI currently drives RTL changes explicitly via the `dir='rtl'` property inside the individual script nodes when the parameter reads "Middle East". Do not attempt to force-rebuild the entirety of `index.css` for RTL.
+- **`@OUT` Markdown files**: Generated by the backend next to the repo root; do not commit `*.md` there (gitignored). For local dev, confirm the `uvicorn` process can write to the workspace directory.
+- **Knowledge path policy**: New work should use `knowledge_paths.py` constants (`FACTORS_DIR`, `VECTOR_DB_PATH`) instead of hardcoding `data/insights` or `chroma_db` paths. Legacy paths are compatibility-only.
+- **Filename policy**: Prefer concise readable labels (`short_name`) for region/platform/angle to keep SOP exports scannable in production ops.
+- **CN storyboard policy**: `output_mode=cn` should prioritize “执行指令密度” over bilingual explainability; avoid duplicate interpretation rows when source fields are already Chinese-facing.
 
 ### 🗂️ Workspace Layout
 
 ```text
 D:\PRO\AdCreative AI Script Generator\
 │
+├── @OUT/                   <-- synthesis Markdown output ( *.md gitignored; .gitkeep optional )
 ├── docs/
 │   ├── PRD.md
 │   ├── MEMORY_BANK.md      <-- This file (Context)
 │   └── E2E_FULL_VERIFICATION_RUNBOOK.md
 │
 ├── backend/
+│   ├── knowledge_paths.py  <-- canonical knowledge/factor/vector path registry + legacy migration
 │   ├── main.py             <-- FastAPI routes (generate, extract, usage summary, …)
-│   ├── prompts.py          <-- 5-DNA Core Prompter Engine
+│   ├── md_export.py      <-- @OUT Markdown writers for /api/generate success
+│   ├── projects_api.py   <-- workspaces JSON CRUD (project history_log, …)
+│   ├── prompts.py          <-- 5-DNA Core Prompter Engine (+ compliance & director-note schema constraints)
 │   ├── scraper.py          <-- Play metadata + bilingual director archive extract
 │   ├── usage_tracker.py    <-- Daily counters + /api/usage/summary payload
 │   ├── usage_tokens.py     <-- Parse completion.usage total_tokens
 │   ├── usage_counters.json <-- Persisted daily usage (gitignored)
-│   ├── tests/              <-- pytest (incl. test_usage_api, test_usage_tokens)
+│   ├── data/
+│   │   └── knowledge/
+│   │       ├── factors/    <-- canonical regions/platforms/angles store (migrated from data/insights)
+│   │       └── vector_store/
+│   │           └── local_storage.json
+│   ├── tests/              <-- pytest (incl. test_md_export, test_api_routes, …)
 │   └── requirements.txt
 │
 └── frontend/
@@ -197,7 +264,8 @@ D:\PRO\AdCreative AI Script Generator\
         ├── config/
         │   └── apiBase.ts           <-- API_BASE / VITE_API_BASE
         ├── context/
-        │   └── ShellActivityContext.tsx
+        │   ├── ShellActivityContext.tsx
+        │   └── ProjectContext.tsx   <-- projects from /api/projects; current workspace
         ├── components/
         │   ├── ProjectArchiveCard.tsx
         │   └── ThemeAppearanceControl.tsx   <-- theme pref + segmented control / mobile menu
@@ -206,6 +274,8 @@ D:\PRO\AdCreative AI Script Generator\
         ├── layout/
         │   └── MainLayout.tsx       <-- sidebar busy dots + Pro Plan quota popover
         └── pages/
+            ├── Dashboard.tsx
+            ├── Lab.tsx              <-- SOP mixing console; POST /api/generate; shows markdown_path
             ├── Generator.tsx
             └── OracleIngestion.tsx
 ```

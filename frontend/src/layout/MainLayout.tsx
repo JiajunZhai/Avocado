@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { Clapperboard, LayoutDashboard, Sparkles, Settings, LifeBuoy, Compass, ChevronsUpDown, ChevronRight, Check, Activity } from 'lucide-react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useReducedMotion } from 'framer-motion';
 import axios from 'axios';
 import { API_BASE } from '../config/apiBase';
@@ -25,6 +25,13 @@ interface UsageSummary {
   tokens_from_provider_today: number;
   tokens_from_estimate_today: number;
   tokens_remaining_today_estimate: number;
+  script_generations_today: number;
+  avg_tokens_per_script_today: number;
+  avg_provider_tokens_per_script_today: number;
+  avg_estimate_tokens_per_script_today: number;
+  last_script_tokens: number;
+  script_generations_provider_today: number;
+  script_generations_estimate_today: number;
   billing_quality: 'provider' | 'mixed' | 'estimate_only';
   oracle_retrievals_today: number;
   oracle_ingests_today: number;
@@ -235,6 +242,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     <span className="text-on-surface-variant font-sans text-[10px] ml-1">/ {usageSummary.tokens_budget_today.toLocaleString()}</span>
                   </dd>
                 </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-on-surface-variant shrink-0">{t('quota.tokens_used')}</dt>
+                  <dd className="font-mono tabular-nums text-right">
+                    {usageSummary.tokens_used_today.toLocaleString()} tok
+                  </dd>
+                </div>
                 {(usageSummary.billing_quality === 'provider' || usageSummary.billing_quality === 'mixed') && (
                   <div className="flex justify-between gap-2 text-[10px] text-on-surface-variant">
                     <span>{t('quota.provider_billed')}</span>
@@ -251,6 +264,28 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     </span>
                   </div>
                 )}
+                <div className="pt-1 border-t border-outline-variant/20 mt-1 space-y-1">
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-on-surface-variant shrink-0">{t('quota.last_script')}</dt>
+                    <dd className="font-mono tabular-nums text-right">
+                      {usageSummary.last_script_tokens.toLocaleString()} tok
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-on-surface-variant shrink-0">{t('quota.avg_script')}</dt>
+                    <dd className="font-mono tabular-nums text-right">
+                      {usageSummary.avg_tokens_per_script_today.toLocaleString()} tok
+                    </dd>
+                  </div>
+                  {usageSummary.script_generations_today > 0 && (
+                    <div className="flex justify-between gap-2 text-[10px] text-on-surface-variant">
+                      <span>{t('quota.sample_count')}</span>
+                      <span className="font-mono tabular-nums">
+                        {usageSummary.script_generations_today} ({usageSummary.script_generations_provider_today}/{usageSummary.script_generations_estimate_today})
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <div className="flex justify-between gap-2">
                   <dt className="text-on-surface-variant shrink-0">{t('quota.oracle_searches')}</dt>
                   <dd className="font-mono tabular-nums">{usageSummary.oracle_retrievals_today}</dd>

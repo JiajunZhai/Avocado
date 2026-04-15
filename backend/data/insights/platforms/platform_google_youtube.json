@@ -1,0 +1,26 @@
+{
+    "id": "platform_google_youtube",
+    "category": "platform",
+    "name": "Google / YouTube",
+    "specs": {
+        "format": [
+            "16:9 Horizontal (Main)",
+            "9:16 Vertical (Shorts)",
+            "6s Bumper Ads"
+        ],
+        "skip_timer": "Critical 5-second window",
+        "multi_asset": "Requires multiple headlines and descriptions for UAC machine learning"
+    },
+    "platform_exclusive_logic": {
+        "The_Skip_Breaker": "Break the 4th wall in the first 2s (e.g., character pointing at the skip button saying 'Wait!').",
+        "Search_Intent": "Align creative with search keywords. If they search for 'Strategy', show 'Deep Combat Mechanics'.",
+        "Audio_Storytelling": "YouTube is a 'sound-on' platform. High-quality narration and cinematic soundtracks are mandatory."
+    },
+    "psychological_hooks": [
+        "Expert Authority: 'Professional Gamer Review' style or 'Developer Commentary'.",
+        "The 5-Second Challenge: 'If you can solve this in 5s, you are a genius. [Timer starts now]'.",
+        "Cinematic Immersion: High-quality lore and world-building that looks like a movie trailer."
+    ],
+    "focus": "Immediate Intrigue (First 5s) > Brand Authority > High-intent Search",
+    "short_name": "GoogleYT"
+}

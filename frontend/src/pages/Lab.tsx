@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Beaker, Layers, Network, Database, Target, Lock, Play, Activity, Globe, MonitorPlay, BrainCircuit, RefreshCw, Eye, Info } from 'lucide-react';
 import axios from 'axios';
@@ -18,6 +18,10 @@ export const Lab: React.FC = () => {
   const [regionId, setRegionId] = useState<string>('');
   const [platformId, setPlatformId] = useState<string>('');
   const [angleId, setAngleId] = useState<string>('');
+  const [outputMode, setOutputMode] = useState<'cn' | 'en'>(() => {
+    const saved = localStorage.getItem('sop_output_mode');
+    return saved === 'en' ? 'en' : 'cn';
+  });
   
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [synthesisResult, setSynthesisResult] = useState<any>(null);
@@ -31,6 +35,10 @@ export const Lab: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [regionId, platformId, angleId]);
+
+  useEffect(() => {
+    localStorage.setItem('sop_output_mode', outputMode);
+  }, [outputMode]);
 
   // Fetch DB
   useEffect(() => {
@@ -64,7 +72,8 @@ export const Lab: React.FC = () => {
         region_id: regionId,
         platform_id: platformId,
         angle_id: angleId,
-        engine: "cloud"
+        engine: "cloud",
+        output_mode: outputMode
       };
       const response = await axios.post(`${API_BASE}/api/generate`, payload);
       setSynthesisResult(response.data);
@@ -77,6 +86,13 @@ export const Lab: React.FC = () => {
   };
 
   const toOptions = (items: any[]) => items.map(i => ({ value: i.id, label: i.name || i.id }));
+  const outputModeOptions = useMemo(
+    () => [
+      { value: 'cn', label: t('lab.output_mode.cn') },
+      { value: 'en', label: t('lab.output_mode.en') },
+    ],
+    [t]
+  );
 
   return (
     <div className="w-full h-full flex flex-col bg-background text-on-background relative overflow-hidden page-pad">
@@ -209,6 +225,21 @@ export const Lab: React.FC = () => {
                     {angleId && <ProSelect value={angleId} onChange={setAngleId} options={toOptions(metadata.angles)} dropUp={true} />}
                  </div>
 
+                 <div className="w-full bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-2 shadow-sm hover:shadow-md transition-shadow relative flex flex-col">
+                    <div className="flex items-center gap-2 mb-1.5">
+                       <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                          <Globe className="w-3 h-3 text-primary" />
+                       </div>
+                       <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('lab.output_mode.label')}</div>
+                    </div>
+                    <ProSelect
+                      value={outputMode}
+                      onChange={(v) => setOutputMode((v === 'en' ? 'en' : 'cn'))}
+                      options={outputModeOptions}
+                      dropUp={true}
+                    />
+                 </div>
+
                  <div className="w-full shrink-0 mt-auto pt-4">
                     <motion.button
                       whileHover={!(isSynthesizing || !currentProject || !regionId) ? { scale: 1.02 } : {}}
@@ -292,6 +323,12 @@ export const Lab: React.FC = () => {
                            </div>
                            <div className="text-[12px] text-on-surface/90 leading-relaxed font-medium">{synthesisResult.psychology_insight}</div>
                          </motion.div>
+
+                         {synthesisResult.markdown_path && (
+                           <div className="rounded-xl border border-outline-variant/35 bg-surface-container-high/80 px-3 py-2 text-[10px] font-mono text-on-surface-variant break-all">
+                             {t('lab.markdown_saved', { path: synthesisResult.markdown_path })}
+                           </div>
+                         )}
 
                          <div className="flex flex-col gap-3 pt-2">
                            {synthesisResult.script.map((line: any, idx: number) => (

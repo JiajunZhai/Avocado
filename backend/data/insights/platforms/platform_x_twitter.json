@@ -1,0 +1,22 @@
+{
+    "id": "platform_x_twitter",
+    "category": "platform",
+    "name": "X (Twitter)",
+    "specs": {
+        "format": "16:9 or 1:1 Video/Image",
+        "engagement_focus": "Retweets and Replies are key for viral reach",
+        "hashtag_logic": "Must use trending hashtags or 'Branded Hashflags'"
+    },
+    "platform_exclusive_logic": {
+        "The_Hype_Train": "Announce 'Collaborations' (Crossover), 'Voice Actor Reveals', or 'Pre-registration Milestones'.",
+        "Art_Showcase": "Post high-resolution character illustrations (Ichimai-e) that fans want to save/wallpaper.",
+        "The_Poll_Hook": "Use 'Polls' to let users vote on the next character skin or game feature."
+    },
+    "psychological_hooks": [
+        "Information Superiority: 'First look at the new SSR!'",
+        "Social Connection: Tagging friends to join a 'Pre-registration' campaign for collective rewards.",
+        "The 'News' Angle: Presenting the game update as a 'Breaking News' flash."
+    ],
+    "focus": "Visual Quality (IP/Art) > Social Viral potential",
+    "short_name": "X"
+}

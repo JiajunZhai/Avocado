@@ -4,11 +4,10 @@ from ollama_client import LocalLLMResult
 
 def _payload(engine: str = "cloud"):
     return {
-        "title": "Capybara Bomb!",
-        "usp": "Collect heroes and open loot chests.",
-        "platform": "AdMob (伪试玩交互式)",
-        "angle": "失败诱导型 (Fail-based)",
-        "region": "NA/EU",
+        "project_id": "e7ad471c-f8c8-49fa-b0f4-88c127833688",
+        "region_id": "region_us_prime",
+        "platform_id": "platform_applovin_unity",
+        "angle_id": "angle_fail_trap_pro",
         "engine": engine,
     }
 

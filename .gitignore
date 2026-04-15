@@ -1,23 +1,67 @@
-# Backend
-backend/chroma_db/
-backend/__pycache__/
-backend/.env
-backend/.pytest_cache/
-backend/usage_counters.json
-backend/venv/
-backend/test_*.py
+# =========================
+# Generated outputs
+# =========================
+# Synthesis Markdown exports (repo root @OUT)
+@OUT/**/*.md
+@OUT/*
+!@OUT/.gitkeep
 
-# Frontend
-frontend/node_modules/
+# Additional ad-hoc output folder
+OUT/
+
+# Build artifacts
 frontend/dist/
-frontend/.env
-frontend/.env.local
+
+# Screenshots / ad-hoc media dumps
+Screenshot/
+start.png
+
+# =========================
+# Secrets & environment
+# =========================
+**/.env
+**/.env.local
+**/.env.*.local
+**/.envrc
+
+# Keep template examples
+!**/.env.example
+
+# =========================
+# Python
+# =========================
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.coverage
+**/.coverage.*
+**/.python-version
+**/*.sqlite3
+
+backend/venv/
+backend/usage_counters.json
+
+# Legacy / local vector stores
+backend/chroma_db/
+backend/data/knowledge/vector_store/
+chroma_db/
+
+# =========================
+# Node / frontend
+# =========================
+frontend/node_modules/
+frontend/.vite/
 frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
 
-# OS Files
-.DS_Store
-Thumbs.db
-
-# IDEs
+# =========================
+# IDE / OS
+# =========================
 .idea/
 .vscode/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,24 @@
+{
+    "id": "platform_mtg_pro",
+    "category": "platform",
+    "name": "Mintegral (Interactive & DCO Focus)",
+    "specs": [
+        "Hybrid Format: Video (15-30s) + Interactive Endcard (IEC) or Full Playable Ads.",
+        "Multi-aspect Ratio: Must provide 9:16 (Vertical) and 16:9 (Horizontal) to cover massive SDK inventory.",
+        "File Size: Playables must be ultra-light (<2MB optimized, <5MB limit) for instant loading.",
+        "Tracking: Milestone events (e.g., interaction_start, level_1_complete, cta_click) to feed the algorithm."
+    ],
+    "creative_logic": {
+        "The_Switch": "The transition from 'Watching' to 'Playing' must be seamless. Use a 'Hand Icon' or 'Pointer' to prompt the first click at 3s-5s.",
+        "DCO_Strategy": "Modular design. Different 'Hooks' (Video) paired with the same 'Core Play' (IEC) to test best-performing combinations.",
+        "Progression": "The playable must show a 'Power Up' or 'Win State' within 10 seconds to trigger a dopamine hit."
+    },
+    "psychological_hooks": [
+        "The 'Tutorial Trap': A very simple puzzle that looks slightly challenging. Once the user clicks, they are 50% more likely to install (Endowment Effect).",
+        "The 'Incomplete Task': Show a building half-built or a puzzle 90% solved. People have a natural urge to finish it.",
+        "The 'Reward Reinforcement': After the interactive part, show a huge 'Congratulations! Claim your bonus in-game' to align with the rewarded-video mindset."
+    ],
+    "preferred_audio": "Tactile SFX (Clicking, popping, sliding) that provides haptic-like feedback. Background music should be looping and non-intrusive.",
+    "focus": "IVR (Interactive View Rate) > CVR (Conversion Rate) > LTV (Long-term Value)",
+    "short_name": "mtg"
+}

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Plus, Trash2, Save, FileJson, Check, AlertCircle } from 'lucide-react';
+import { X, Plus, Trash2, Save, FileJson, Check, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { API_BASE } from '../config/apiBase';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface ParameterManagerModalProps {
   isOpen: boolean;
@@ -15,8 +15,6 @@ export const ParameterManagerModal: React.FC<ParameterManagerModalProps> = ({ is
   
   const [activeTab, setActiveTab] = useState<'regions' | 'platforms' | 'angles'>('regions');
   const [metadata, setMetadata] = useState<{ regions: any[], platforms: any[], angles: any[] }>({ regions: [], platforms: [], angles: [] });
-  const [loading, setLoading] = useState(false);
-  
   // Selected item for editing
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState<string>('');
@@ -24,7 +22,6 @@ export const ParameterManagerModal: React.FC<ParameterManagerModalProps> = ({ is
   const [successStatus, setSuccessStatus] = useState(false);
 
   const fetchMetadata = async () => {
-    setLoading(true);
     try {
       const { data } = await axios.get(`${API_BASE}/api/insights/metadata`);
       setMetadata(data);
@@ -34,8 +31,6 @@ export const ParameterManagerModal: React.FC<ParameterManagerModalProps> = ({ is
       }
     } catch (e) {
       console.error(e);
-    } finally {
-      setLoading(false);
     }
   };
 

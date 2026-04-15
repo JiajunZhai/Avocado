@@ -1,20 +1,18 @@
+import hashlib
 import json
-import uuid
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-import json
+import re
 import uuid
-import os
+
 import numpy as np
 from dotenv import load_dotenv
+from knowledge_paths import VECTOR_DB_PATH, ensure_knowledge_layout
 
 load_dotenv()
 
-# We have sunset ChromaDB due to Python 3.14+ Pydantic compatibility failure
-# Upgrading to a zero-dependency (native numpy+scikit) persistent Vector Matrix
+# ChromaDB was dropped (Python 3.14 / pydantic friction). We keep a persistent
+# JSON store. Retrieval: dense sentence embeddings (default when sentence-transformers
+# is installed) or TF-IDF. Env: RAG_RETRIEVAL=auto|vector|tfidf, RAG_EMBEDDING_MODEL=...
 try:
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.metrics.pairwise import cosine_similarity
@@ -22,13 +20,46 @@ except ImportError:
     print("[WARN] Scikit-Learn not found. Run pip install scikit-learn. Falling back to memory-only.")
     TfidfVectorizer = None
 
+
+def _docs_fingerprint(docs: list[str]) -> str:
+    h = hashlib.sha256()
+    for d in docs:
+        h.update((d or "").encode("utf-8", errors="replace"))
+        h.update(b"\x1e")
+    return h.hexdigest()
+
+
+def _region_score_bonus(meta: dict | None, boost_tokens: list[str] | None) -> float:
+    """Lexical metadata boost so 'Japan' in insight aligns with docs tagged Japan / Korea, Global."""
+    if not boost_tokens or not meta:
+        return 0.0
+    region_field = (meta.get("region") or "").lower()
+    bonus = 0.0
+    for raw in boost_tokens:
+        t = (raw or "").strip().lower()
+        if len(t) < 2:
+            continue
+        if t in region_field:
+            bonus += 0.14
+        for part in re.split(r"[,/&\s]+", region_field):
+            part = part.strip()
+            if part and (t in part or part in t):
+                bonus += 0.08
+    if "global" in region_field:
+        bonus += 0.03
+    return min(bonus, 0.28)
+
+
 class ScikitLearnLocalDB:
-    def __init__(self, db_path="./chroma_db/local_storage.json"):
-        self.db_path = db_path
+    def __init__(self, db_path: str | None = None):
+        ensure_knowledge_layout()
+        self.db_path = db_path or str(VECTOR_DB_PATH)
         self.docs = []
         self.metas = []
         self.vectorizer = TfidfVectorizer() if TfidfVectorizer else None
-        
+        self.rag_backend = "tfidf"
+        self.embedding_model_id: str | None = None
+
         # Ensure directory exists
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self.load()
@@ -53,38 +84,203 @@ class ScikitLearnLocalDB:
         self.save()
         print(f"[RAG] Local matrix DB added {len(documents)} records (total: {len(self.docs)}).")
 
-    def query(self, query_texts, n_results=3):
+    def _indexed_corpus(self) -> list[str]:
+        """Augment each row with region tokens so short queries (e.g. 'Japan') overlap docs."""
+        lines: list[str] = []
+        for doc, meta in zip(self.docs, self.metas):
+            region = (meta or {}).get("region") or ""
+            extra = f" {region} {region.replace(',', ' ')}"
+            lines.append(f"{doc}{extra}")
+        return lines
+
+    def query(self, query_texts, n_results=3, region_boost_tokens: list[str] | None = None):
         if not self.docs or not self.vectorizer:
-            return {"documents": [[]]}
-            
-        # 1. Fit TF-IDF on our complete knowledge base
-        tfidf_matrix = self.vectorizer.fit_transform(self.docs)
-        
-        # 2. Transform the incoming search queries (handles batch)
+            return {"documents": [[]], "metadatas": [[]]}
+
+        indexed = self._indexed_corpus()
+        tfidf_matrix = self.vectorizer.fit_transform(indexed)
         query_vecs = self.vectorizer.transform(query_texts)
-        
-        # 3. Calculate cosine similarity
         similarities = cosine_similarity(query_vecs, tfidf_matrix)
-        
-        batch_results = []
-        batch_metas = []
-        for sim_scores in similarities:
-            top_indices = np.argsort(sim_scores)[::-1][:n_results]
-            
-            results = [self.docs[i] for i in top_indices if sim_scores[i] > 0] 
-            metas = [self.metas[i] for i in top_indices if sim_scores[i] > 0] 
-            
-            if not results and self.docs:
-                results = self.docs[-n_results:] 
-                metas = self.metas[-n_results:] 
-                
+
+        batch_results: list[list[str]] = []
+        batch_metas: list[list[dict]] = []
+        for _, sim_scores in enumerate(similarities):
+            scores = np.array(sim_scores, dtype=float).copy()
+            if region_boost_tokens:
+                for i in range(len(self.docs)):
+                    scores[i] += _region_score_bonus(
+                        self.metas[i] if i < len(self.metas) else None,
+                        region_boost_tokens,
+                    )
+            order = np.argsort(scores)[::-1][:n_results]
+            results = [self.docs[int(i)] for i in order]
+            metas = [
+                self.metas[int(i)] if int(i) < len(self.metas) else {}
+                for i in order
+            ]
             batch_results.append(results)
             batch_metas.append(metas)
-            
+
         return {"documents": batch_results, "metadatas": batch_metas}
 
-collection = ScikitLearnLocalDB()
-CHROMA_AVAILABLE = True # DB operates fully natively
+
+class EmbeddingLocalDB(ScikitLearnLocalDB):
+    """
+    Sentence-embedding retrieval (cosine on L2-normalized vectors).
+    Caches matrices under the same directory as local_storage.json (e.g. local_storage.embeddings.npz).
+    """
+
+    def __init__(self, db_path: str | None = None):
+        super().__init__(db_path=db_path)
+        self.rag_backend = "embedding"
+        self._doc_matrix: np.ndarray | None = None
+        self._embed_fp: str | None = None
+        self._st_model = None
+        mid = os.getenv(
+            "RAG_EMBEDDING_MODEL",
+            "sentence-transformers/all-MiniLM-L6-v2",
+        ).strip()
+        self.embedding_model_id = mid
+
+    def _embed_cache_path(self) -> str:
+        base = os.path.splitext(self.db_path)[0]
+        return f"{base}.embeddings.npz"
+
+    def _invalidate_embedding_cache(self) -> None:
+        self._doc_matrix = None
+        self._embed_fp = None
+        p = self._embed_cache_path()
+        if os.path.exists(p):
+            try:
+                os.remove(p)
+            except OSError:
+                pass
+
+    def _get_sentence_model(self):
+        if self._st_model is None:
+            from sentence_transformers import SentenceTransformer
+
+            self._st_model = SentenceTransformer(self.embedding_model_id or "sentence-transformers/all-MiniLM-L6-v2")
+        return self._st_model
+
+    def _ensure_vectors(self) -> None:
+        if not self.docs:
+            return
+        fp = _docs_fingerprint(self.docs)
+        if self._doc_matrix is not None and self._embed_fp == fp:
+            return
+        cache_path = self._embed_cache_path()
+        if os.path.exists(cache_path):
+            try:
+                z = np.load(cache_path, allow_pickle=True)
+                zfp = str(z["fingerprint"])
+                vecs = z["vectors"]
+                mid = str(z["model_id"]) if "model_id" in z.files else ""
+                if (
+                    zfp == fp
+                    and vecs.shape[0] == len(self.docs)
+                    and mid == (self.embedding_model_id or "")
+                ):
+                    self._doc_matrix = vecs.astype(np.float32, copy=False)
+                    self._embed_fp = fp
+                    return
+            except Exception as e:
+                print(f"[RAG] Embedding cache unreadable ({e}), rebuilding.")
+
+        texts = self._indexed_corpus()
+        model = self._get_sentence_model()
+        emb = model.encode(
+            texts,
+            normalize_embeddings=True,
+            show_progress_bar=False,
+        )
+        self._doc_matrix = np.asarray(emb, dtype=np.float32)
+        self._embed_fp = fp
+        try:
+            np.savez_compressed(
+                cache_path,
+                vectors=self._doc_matrix,
+                fingerprint=fp,
+                model_id=self.embedding_model_id or "",
+            )
+        except OSError as e:
+            print(f"[RAG] Could not write embedding cache: {e}")
+
+    def load(self) -> None:
+        super().load()
+        # Drop in-memory matrix only; on-disk .npz may still match after restart.
+        self._doc_matrix = None
+        self._embed_fp = None
+
+    def add(self, documents, metadatas, ids):
+        super().add(documents, metadatas, ids)
+        self._invalidate_embedding_cache()
+
+    def query(self, query_texts, n_results=3, region_boost_tokens: list[str] | None = None):
+        if not self.docs:
+            return {"documents": [[]], "metadatas": [[]]}
+        try:
+            self._ensure_vectors()
+            if self._doc_matrix is None or self._doc_matrix.shape[0] != len(self.docs):
+                raise RuntimeError("embedding matrix out of sync with docs")
+            model = self._get_sentence_model()
+            q_emb = model.encode(
+                query_texts,
+                normalize_embeddings=True,
+                show_progress_bar=False,
+            )
+            qm = np.asarray(q_emb, dtype=np.float32)
+            sims = np.dot(qm, self._doc_matrix.T)
+            batch_results: list[list[str]] = []
+            batch_metas: list[list[dict]] = []
+            for row in range(sims.shape[0]):
+                scores = np.array(sims[row], dtype=float).copy()
+                if region_boost_tokens:
+                    for i in range(len(self.docs)):
+                        scores[i] += _region_score_bonus(
+                            self.metas[i] if i < len(self.metas) else None,
+                            region_boost_tokens,
+                        )
+                order = np.argsort(scores)[::-1][:n_results]
+                batch_results.append([self.docs[int(i)] for i in order])
+                batch_metas.append(
+                    [
+                        self.metas[int(i)] if int(i) < len(self.metas) else {}
+                        for i in order
+                    ]
+                )
+            return {"documents": batch_results, "metadatas": batch_metas}
+        except Exception as e:
+            print(f"[RAG] Vector retrieval failed ({e}); falling back to TF-IDF.")
+            return super().query(query_texts, n_results, region_boost_tokens)
+
+
+def _create_knowledge_base() -> ScikitLearnLocalDB:
+    ensure_knowledge_layout()
+    mode = os.getenv("RAG_RETRIEVAL", "auto").strip().lower()
+    force_tfidf = mode in ("tfidf", "sparse", "legacy", "0", "false", "no")
+    force_vector = mode in ("vector", "embedding", "dense", "1", "true", "yes")
+
+    if force_tfidf:
+        return ScikitLearnLocalDB()
+
+    if mode in ("auto", "") or force_vector:
+        try:
+            import sentence_transformers  # noqa: F401
+
+            return EmbeddingLocalDB()
+        except ImportError:
+            print(
+                "[RAG] sentence-transformers not installed; using TF-IDF. "
+                "pip install sentence-transformers for vector retrieval."
+            )
+            return ScikitLearnLocalDB()
+
+    return ScikitLearnLocalDB()
+
+
+collection = _create_knowledge_base()
+CHROMA_AVAILABLE = True  # local JSON + TF-IDF or embeddings
 
 def distill_and_store(raw_text: str, source_url: str, year_quarter: str = "Unknown Date"):
     """
@@ -146,7 +342,6 @@ def distill_and_store(raw_text: str, source_url: str, year_quarter: str = "Unkno
         
         raw_output = response.choices[0].message.content
         # Regex to strip markdown backticks if any
-        import re
         match = re.search(r'(\[.*\])', raw_output, re.DOTALL)
         if match:
             raw_output = match.group(1)
@@ -184,15 +379,26 @@ def distill_and_store(raw_text: str, source_url: str, year_quarter: str = "Unkno
         print(f"Distillation failed: {e}")
         return {"success": False, "error": str(e)}
 
-def retrieve_context(query_string: str, top_k: int = 3) -> tuple[str, list[str]]:
+def retrieve_context(
+    query_string: str,
+    top_k: int = 3,
+    *,
+    supplement: str = "",
+    region_boost_tokens: list[str] | None = None,
+) -> tuple[str, list[str]]:
     """
-    Search ChromaDB for relevant insights matching the query.
-    Returns (Compiled Context String, List of Citation Strings)
+    Retrieval over local_storage.json: sentence embeddings (default) or TF-IDF (RAG_RETRIEVAL=tfidf).
+    supplement: game brief + insight text so retrieval is not limited to opaque *_id strings.
+    region_boost_tokens: e.g. ['Japan'] from region JSON `name` to prefer region-tagged rules.
     """
     try:
+        full_q = " ".join(s for s in (query_string, supplement) if s).strip()
+        if not full_q:
+            full_q = query_string
         results = collection.query(
-            query_texts=[query_string],
-            n_results=top_k
+            query_texts=[full_q],
+            n_results=top_k,
+            region_boost_tokens=region_boost_tokens,
         )
         
         if not results or not results.get("documents") or not results["documents"][0]:
@@ -259,4 +465,9 @@ def get_collection_stats() -> dict:
                 "stat": f"Rank {meta.get('score', 85)}"
             })
             
-    return {"total_rules": total, "recent_intel": recent}
+    return {
+        "total_rules": total,
+        "recent_intel": recent,
+        "retrieval_backend": getattr(collection, "rag_backend", "tfidf"),
+        "embedding_model": getattr(collection, "embedding_model_id", None),
+    }
