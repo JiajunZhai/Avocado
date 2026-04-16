@@ -28,6 +28,7 @@ export interface Project {
   name: string;
   game_info: GameInfo;
   market_targets: MarketTarget[];
+  history_log?: any[];
   created_at: string;
   updated_at: string;
 }
@@ -51,6 +52,7 @@ export const ProjectProvider: React.FC<{children: ReactNode}> = ({ children }) =
   const [currentProject, _setCurrentProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const CACHE_KEY = 'adcreative_current_project_cache';
 
   const fetchProjects = async () => {
     try {
@@ -66,15 +68,29 @@ export const ProjectProvider: React.FC<{children: ReactNode}> = ({ children }) =
 
   const init = async () => {
     setIsLoading(true);
+    // Bootstrap from local cache to avoid refresh flicker.
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached && !currentProject) {
+        const parsed = JSON.parse(cached) as Project;
+        if (parsed && typeof parsed === 'object' && typeof (parsed as any).id === 'string') {
+          _setCurrentProject(parsed);
+        }
+      }
+    } catch {
+      // ignore cache parse errors
+    }
     const data = await fetchProjects();
     if (data.length > 0) {
       const storedId = localStorage.getItem('adcreative_current_project_id');
       const found = data.find(p => p.id === storedId);
       if (found) {
         _setCurrentProject(found);
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify(found)); } catch { /* ignore */ }
       } else {
         _setCurrentProject(data[0]);
         localStorage.setItem('adcreative_current_project_id', data[0].id);
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify(data[0])); } catch { /* ignore */ }
       }
     }
     setIsLoading(false);
@@ -89,6 +105,7 @@ export const ProjectProvider: React.FC<{children: ReactNode}> = ({ children }) =
         const nextProject = typeof param === 'function' ? param(prev) : param;
         if (nextProject) {
            localStorage.setItem('adcreative_current_project_id', nextProject.id);
+           try { localStorage.setItem(CACHE_KEY, JSON.stringify(nextProject)); } catch { /* ignore */ }
         }
         return nextProject;
      });

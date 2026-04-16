@@ -1,0 +1,27 @@
+{
+  "global": [
+    {
+      "term": "guaranteed",
+      "severity": "warn",
+      "note": "Avoid absolute guarantees; soften claims."
+    },
+    {
+      "term": "100% win",
+      "severity": "warn",
+      "note": "Absolute win-rate claims may be flagged."
+    },
+    {
+      "term": "稳赚",
+      "severity": "warn",
+      "note": "Avoid financial guarantee wording."
+    },
+    {
+      "term": "封号",
+      "severity": "warn",
+      "note": "Do not mention bans/account risks in the ad copy."
+    }
+  ],
+  "platform_overrides": {},
+  "region_overrides": {}
+}
+

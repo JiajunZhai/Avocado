@@ -1,10 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Folder, Activity, Trash2, FolderPlus, Settings2, PlaySquare } from 'lucide-react';
+import { Folder, Activity, Trash2, FolderPlus, Settings2, PlaySquare, Eye, RefreshCw, GitCompare, Filter } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useProjectContext } from '../context/ProjectContext';
 import { ProjectSetupModal } from '../components/ProjectSetupModal';
 import { useTranslation } from 'react-i18next';
+import axios from 'axios';
+import { API_BASE } from '../config/apiBase';
+import { ResultDashboardView } from '../components/ResultDashboardView';
+import { CompareViewModal } from '../components/CompareViewModal';
 
 // Removed mock stats
 
@@ -124,10 +128,15 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ proj, regions, delay, handleE
 
 export const Dashboard: React.FC = () => {
   const { t } = useTranslation();
-  const { projects = [], setCurrentProject, deleteProject } = useProjectContext();
+  const { projects = [], currentProject, setCurrentProject, deleteProject, refreshProjects } = useProjectContext();
   const navigate = useNavigate();
   const [showSetupModal, setShowSetupModal] = React.useState(false);
   const [editingProject, setEditingProject] = React.useState<any>(null);
+  const [selectedProjectId, setSelectedProjectId] = React.useState<string>('');
+  const [activeRecordId, setActiveRecordId] = React.useState<string>('');
+  const [compareIds, setCompareIds] = React.useState<string[]>([]);
+  const [compareOpen, setCompareOpen] = React.useState(false);
+  const [isRefreshingCopy, setIsRefreshingCopy] = React.useState(false);
 
   const handleEnterWorkspace = (proj: any) => {
      setCurrentProject(proj);
@@ -139,35 +148,79 @@ export const Dashboard: React.FC = () => {
      setShowSetupModal(true);
   };
 
-  const globalHistory = React.useMemo(() => {
-    let all: any[] = [];
-    projects.forEach((p: any) => {
-      if (p.history_log && Array.isArray(p.history_log)) {
-        p.history_log.forEach((log: any) => {
-          all.push({
-            ...log,
-            projectName: p.name,
-            projectId: p.id
-          });
-        });
-      }
-    });
-    return all.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 15);
+  // Note: We now focus on per-project records in the right panel.
+
+  const projectOptions = React.useMemo(() => {
+    return projects.map((p: any) => ({ id: String(p.id || ''), name: String(p.name || p.id || '') })).filter((x) => x.id);
   }, [projects]);
+
+  React.useEffect(() => {
+    const id = selectedProjectId || currentProject?.id || '';
+    if (!selectedProjectId && id) setSelectedProjectId(id);
+  }, [currentProject?.id, selectedProjectId]);
+
+  const selectedProject = React.useMemo(() => {
+    const pid = selectedProjectId || currentProject?.id || '';
+    return projects.find((p: any) => String(p.id) === String(pid)) || null;
+  }, [projects, selectedProjectId, currentProject?.id]);
+
+  const projectHistory = React.useMemo(() => {
+    const h = selectedProject?.history_log;
+    return Array.isArray(h) ? [...h].sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) : [];
+  }, [selectedProject]);
+
+  const activeRecord = React.useMemo(() => {
+    if (!activeRecordId) return null;
+    return projectHistory.find((x: any) => String(x?.id || '') === String(activeRecordId)) || null;
+  }, [projectHistory, activeRecordId]);
+
+  const compareA = React.useMemo(() => (compareIds[0] ? projectHistory.find((x: any) => String(x?.id || '') === String(compareIds[0])) || null : null), [projectHistory, compareIds]);
+  const compareB = React.useMemo(() => (compareIds[1] ? projectHistory.find((x: any) => String(x?.id || '') === String(compareIds[1])) || null : null), [projectHistory, compareIds]);
+
+  const toggleCompare = (id: string) => {
+    setCompareIds((prev) => {
+      const has = prev.includes(id);
+      if (has) return prev.filter((x) => x !== id);
+      if (prev.length >= 2) return [prev[1], id];
+      return [...prev, id];
+    });
+  };
+
+  const runRefreshCopy = async (baseScriptId: string) => {
+    const pid = selectedProject?.id;
+    if (!pid || !baseScriptId) return;
+    setIsRefreshingCopy(true);
+    try {
+      await axios.post(`${API_BASE}/api/quick-copy/refresh`, {
+        project_id: pid,
+        base_script_id: baseScriptId,
+        engine: 'cloud',
+        output_mode: 'cn',
+        quantity: 20,
+        tones: [],
+        locales: ['en'],
+      });
+      await refreshProjects();
+    } finally {
+      setIsRefreshingCopy(false);
+    }
+  };
 
   const timeAgo = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
     if (isNaN(diff)) return '';
     const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return `Just now`;
-    if (minutes < 60) return `${minutes}m ago`;
+    if (minutes < 1) return t('dashboard.history.time.just_now');
+    if (minutes < 60) return t('dashboard.history.time.minutes_ago', { minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    return `${Math.floor(hours / 24)}d ago`;
+    if (hours < 24) return t('dashboard.history.time.hours_ago', { hours });
+    return t('dashboard.history.time.days_ago', { days: Math.floor(hours / 24) });
   };
 
   return (
     <div className="w-full h-full flex flex-col bg-background text-on-background page-pad overflow-hidden">
+      <ResultDashboardView open={!!activeRecord} onClose={() => setActiveRecordId('')} result={activeRecord} />
+      <CompareViewModal open={compareOpen && compareIds.length === 2} onClose={() => setCompareOpen(false)} a={compareA} b={compareB} />
       <div className="max-w-[1600px] w-full mx-auto h-full flex flex-col min-h-0 card-base p-4 md:p-6 lg:p-8">
         
         {/* Header - Fixed Height */}
@@ -201,7 +254,7 @@ export const Dashboard: React.FC = () => {
            
            {/* LEFT GALLERY (Independent Scroll) */}
            <div className="flex-1 flex flex-col min-h-0 min-w-0">
-              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 auto-rows-max content-start">
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 auto-rows-max content-start" style={{ scrollbarGutter: 'stable' }}>
                  {projects.length === 0 ? (
                    <button 
                      onClick={() => setShowSetupModal(true)} 
@@ -231,42 +284,111 @@ export const Dashboard: React.FC = () => {
            </div>
 
            {/* RIGHT SIDEBAR FEED: Global Generation History */}
-           <div className="w-full lg:w-72 xl:w-80 shrink-0 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2 pb-4">
+           <div className="w-full lg:w-72 xl:w-80 shrink-0 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2 pb-4" style={{ scrollbarGutter: 'stable' }}>
               
               <div className="bg-surface-container border border-outline-variant/30 rounded-xl p-5 flex flex-col min-h-0 flex-1 shadow-sm">
-                 <h3 className="text-[10px] font-bold text-on-surface uppercase tracking-widest flex items-center gap-2 mb-5 border-b border-outline-variant/20 pb-3">
-                    <Activity className="w-4 h-4 text-primary" /> {t('dashboard.history.title')}
-                 </h3>
+                 <div className="flex items-center justify-between gap-3 mb-4 border-b border-outline-variant/20 pb-3">
+                   <h3 className="text-[10px] font-bold text-on-surface uppercase tracking-widest flex items-center gap-2">
+                     <Activity className="w-4 h-4 text-primary" /> {t('dashboard.history.title')}
+                   </h3>
+                   <div className="flex items-center gap-2">
+                     <Filter className="w-4 h-4 text-on-surface-variant" />
+                     <select
+                       value={selectedProjectId}
+                       onChange={(e) => {
+                         setSelectedProjectId(e.target.value);
+                         setActiveRecordId('');
+                         setCompareIds([]);
+                       }}
+                       className="bg-surface-container-high border border-outline-variant/30 rounded-lg px-2 py-1 text-[10px] font-bold text-on-surface-variant"
+                     >
+                       {projectOptions.map((p) => (
+                         <option key={p.id} value={p.id}>{p.name}</option>
+                       ))}
+                     </select>
+                   </div>
+                 </div>
                  
-                 <div className="space-y-0 overflow-y-auto custom-scrollbar pr-1 flex-1">
-                   {globalHistory.length === 0 ? (
+                 <div className="space-y-0 overflow-y-auto custom-scrollbar pr-1 flex-1" style={{ scrollbarGutter: 'stable' }}>
+                   {compareIds.length === 2 && (
+                     <div className="sticky top-0 z-[2] pb-2">
+                       <div className="rounded-xl border border-outline-variant/25 bg-surface-container-high/80 backdrop-blur px-3 py-2 flex items-center justify-between gap-2">
+                         <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest truncate">
+                           {t('dashboard.history.compare_picked')} · {compareIds[0]} ↔ {compareIds[1]}
+                         </div>
+                         <button
+                           type="button"
+                           onClick={() => setCompareOpen(true)}
+                           className="btn-director-secondary px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2"
+                         >
+                           <GitCompare className="w-4 h-4" /> {t('dashboard.history.compare')}
+                         </button>
+                       </div>
+                     </div>
+                   )}
+                   {projectHistory.length === 0 ? (
                       <div className="text-xs text-on-surface-variant opacity-70 text-center py-10 flex flex-col items-center gap-2">
                          <Folder className="w-8 h-8 opacity-30" />
                          {t('dashboard.history.empty')}
                       </div>
                    ) : (
-                      globalHistory.map((log, idx) => (
-                         <div key={log.id || idx} className="flex gap-4 group relative">
-                           <div className="flex flex-col items-center">
-                              <div className="w-2 h-2 rounded-full bg-primary/40 group-hover:bg-primary transition-colors z-10 shadow-[0_0_8px_rgba(var(--color-primary-rgb),0.5)]" />
-                              {idx !== globalHistory.length - 1 && <div className="w-[1px] h-full bg-outline-variant/20 group-hover:bg-primary/20 transition-colors my-1" />}
-                           </div>
-                           <div className="flex-1 pb-6 min-w-0">
-                             <div className="flex justify-between items-start mb-1">
-                                <span className="text-[12px] font-black text-on-surface truncate group-hover:text-primary transition-colors tracking-tight">{log.projectName}</span>
-                                <span className="text-[9px] font-mono text-on-surface-variant/70 shrink-0 mt-0.5">{timeAgo(log.timestamp)}</span>
-                             </div>
-                             <div className="text-[10.5px] text-on-surface-variant leading-relaxed">
-                                Generated <span className="font-bold text-on-surface bg-surface-container-high px-1 rounded">{log.recipe?.platform?.toUpperCase() || '-'}</span> script variant for <span className="font-bold text-on-surface bg-surface-container-high px-1 rounded">{log.recipe?.region?.toUpperCase() || '-'}</span> audience.
-                             </div>
-                             {log.recipe?.angle && (
-                                <div className="mt-2 inline-block text-[9px] bg-primary/5 border border-primary/20 text-on-surface px-2 py-0.5 rounded font-mono tracking-tight shadow-sm">
-                                   angle: {log.recipe.angle}
+                      projectHistory.map((log: any, idx: number) => {
+                        const id = String(log?.id || idx);
+                        const kind = String(log?.output_kind || '').toUpperCase();
+                        const rl = String(log?.compliance?.risk_level || 'ok').toUpperCase();
+                        const isSelected = activeRecordId === id;
+                        const isCompare = compareIds.includes(id);
+                        return (
+                          <div key={id} className={`rounded-xl border p-3 mb-2 transition-colors ${isSelected ? 'border-primary/40 bg-primary/5' : 'border-outline-variant/20 bg-surface-container-lowest/40 hover:bg-surface-container-low/40'}`}>
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] font-black tracking-widest text-on-surface-variant uppercase">{kind || 'SOP'}</span>
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                    rl === 'BLOCK' ? 'bg-red-50 text-red-700 border-red-200' : rl === 'WARN' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  }`}>{rl}</span>
                                 </div>
-                             )}
-                           </div>
-                         </div>
-                      ))
+                                <div className="text-[11px] font-black text-on-surface truncate mt-1">{String(log?.id || '')}</div>
+                                <div className="text-[10px] text-on-surface-variant font-mono mt-1">
+                                  {String(log?.recipe?.region || '-')} · {String(log?.recipe?.platform || '-')} · {String(log?.recipe?.angle || '-')}
+                                </div>
+                              </div>
+                              <div className="text-[9px] font-mono text-on-surface-variant/70 shrink-0">{timeAgo(String(log?.timestamp || ''))}</div>
+                            </div>
+                            <div className="flex items-center justify-between gap-2 mt-3">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveRecordId(id)}
+                                  className="text-[10px] font-bold text-on-surface-variant hover:text-on-surface flex items-center gap-1.5"
+                                  title="Open"
+                                >
+                                  <Eye className="w-4 h-4" /> {t('dashboard.history.open')}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleCompare(id)}
+                                  className={`text-[10px] font-bold flex items-center gap-1.5 ${isCompare ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+                                  title="Compare"
+                                >
+                                  <GitCompare className="w-4 h-4" /> {isCompare ? t('dashboard.history.picked') : t('dashboard.history.compare')}
+                                </button>
+                              </div>
+                              {String(log?.output_kind || '') === 'sop' && (
+                                <button
+                                  type="button"
+                                  onClick={() => runRefreshCopy(String(log?.id || ''))}
+                                  disabled={isRefreshingCopy}
+                                  className={`text-[10px] font-bold text-secondary flex items-center gap-1.5 ${isRefreshingCopy ? 'opacity-60 cursor-wait' : 'hover:text-secondary/80'}`}
+                                  title="Refresh Copy"
+                                >
+                                  <RefreshCw className={`w-4 h-4 ${isRefreshingCopy ? 'animate-spin' : ''}`} /> {t('dashboard.history.refresh')}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
                    )}
                  </div>
               </div>

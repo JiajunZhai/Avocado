@@ -95,7 +95,7 @@ class ScikitLearnLocalDB:
 
     def query(self, query_texts, n_results=3, region_boost_tokens: list[str] | None = None):
         if not self.docs or not self.vectorizer:
-            return {"documents": [[]], "metadatas": [[]]}
+            return {"documents": [[]], "metadatas": [[]], "scores": [[]]}
 
         indexed = self._indexed_corpus()
         tfidf_matrix = self.vectorizer.fit_transform(indexed)
@@ -104,6 +104,7 @@ class ScikitLearnLocalDB:
 
         batch_results: list[list[str]] = []
         batch_metas: list[list[dict]] = []
+        batch_scores: list[list[float]] = []
         for _, sim_scores in enumerate(similarities):
             scores = np.array(sim_scores, dtype=float).copy()
             if region_boost_tokens:
@@ -118,10 +119,12 @@ class ScikitLearnLocalDB:
                 self.metas[int(i)] if int(i) < len(self.metas) else {}
                 for i in order
             ]
+            top_scores = [float(scores[int(i)]) for i in order]
             batch_results.append(results)
             batch_metas.append(metas)
+            batch_scores.append(top_scores)
 
-        return {"documents": batch_results, "metadatas": batch_metas}
+        return {"documents": batch_results, "metadatas": batch_metas, "scores": batch_scores}
 
 
 class EmbeddingLocalDB(ScikitLearnLocalDB):
@@ -218,7 +221,7 @@ class EmbeddingLocalDB(ScikitLearnLocalDB):
 
     def query(self, query_texts, n_results=3, region_boost_tokens: list[str] | None = None):
         if not self.docs:
-            return {"documents": [[]], "metadatas": [[]]}
+            return {"documents": [[]], "metadatas": [[]], "scores": [[]]}
         try:
             self._ensure_vectors()
             if self._doc_matrix is None or self._doc_matrix.shape[0] != len(self.docs):
@@ -233,6 +236,7 @@ class EmbeddingLocalDB(ScikitLearnLocalDB):
             sims = np.dot(qm, self._doc_matrix.T)
             batch_results: list[list[str]] = []
             batch_metas: list[list[dict]] = []
+            batch_scores: list[list[float]] = []
             for row in range(sims.shape[0]):
                 scores = np.array(sims[row], dtype=float).copy()
                 if region_boost_tokens:
@@ -243,13 +247,14 @@ class EmbeddingLocalDB(ScikitLearnLocalDB):
                         )
                 order = np.argsort(scores)[::-1][:n_results]
                 batch_results.append([self.docs[int(i)] for i in order])
+                batch_scores.append([float(scores[int(i)]) for i in order])
                 batch_metas.append(
                     [
                         self.metas[int(i)] if int(i) < len(self.metas) else {}
                         for i in order
                     ]
                 )
-            return {"documents": batch_results, "metadatas": batch_metas}
+            return {"documents": batch_results, "metadatas": batch_metas, "scores": batch_scores}
         except Exception as e:
             print(f"[RAG] Vector retrieval failed ({e}); falling back to TF-IDF.")
             return super().query(query_texts, n_results, region_boost_tokens)
@@ -379,13 +384,26 @@ def distill_and_store(raw_text: str, source_url: str, year_quarter: str = "Unkno
         print(f"Distillation failed: {e}")
         return {"success": False, "error": str(e)}
 
-def retrieve_context(
+def _reason_tag_from_doc(doc: str) -> str:
+    d = (doc or "").lower()
+    if any(k in d for k in ("hook", "opening", "first 1-3", "first 1-2")):
+        return "hook"
+    if any(k in d for k in ("format", "9:16", "caption", "sound-off")):
+        return "format"
+    if any(k in d for k in ("edit", "cut", "pace", "rhythm")):
+        return "editing"
+    if any(k in d for k in ("challenge", "curiosity", "social proof", "fomo")):
+        return "psychology"
+    return "general"
+
+
+def retrieve_context_with_evidence(
     query_string: str,
     top_k: int = 3,
     *,
     supplement: str = "",
     region_boost_tokens: list[str] | None = None,
-) -> tuple[str, list[str]]:
+) -> tuple[str, list[str], list[dict]]:
     """
     Retrieval over local_storage.json: sentence embeddings (default) or TF-IDF (RAG_RETRIEVAL=tfidf).
     supplement: game brief + insight text so retrieval is not limited to opaque *_id strings.
@@ -402,28 +420,57 @@ def retrieve_context(
         )
         
         if not results or not results.get("documents") or not results["documents"][0]:
-            return "", []
+            return "", [], []
             
         retrieved_docs = results["documents"][0] # list of strings
         # ChromaDB meta map structure
         retrieved_metas = results["metadatas"][0] if results.get("metadatas") and results["metadatas"][0] else []
+        retrieved_scores = results["scores"][0] if results.get("scores") and results["scores"][0] else []
         
         context = "[Market Context from Vector Intelligence]\n"
         citations = []
+        evidence: list[dict] = []
         
         for i, doc in enumerate(retrieved_docs):
             context += f"- Context Rule {i+1}: {doc}\n"
+            meta = retrieved_metas[i] if i < len(retrieved_metas) and retrieved_metas[i] is not None else {}
             if i < len(retrieved_metas) and retrieved_metas[i] is not None:
-                source = retrieved_metas[i].get("source", "Unknown Oracle Database")
-                year_q = retrieved_metas[i].get("year_quarter", "")
+                source = meta.get("source", "Unknown Oracle Database")
+                year_q = meta.get("year_quarter", "")
                 cite = f"{source} ({year_q})" if year_q else source
                 if cite not in citations:
                     citations.append(cite)
+            score = float(retrieved_scores[i]) if i < len(retrieved_scores) else 0.0
+            evidence.append(
+                {
+                    "rule": doc,
+                    "source": meta.get("source", "Unknown Oracle Database"),
+                    "year_quarter": meta.get("year_quarter", ""),
+                    "match_score": round(score, 4),
+                    "reason_tag": _reason_tag_from_doc(doc),
+                }
+            )
                     
-        return context, citations
+        return context, citations, evidence
     except Exception as e:
         print(f"RAG Retrieval failed: {e}")
-        return "", []
+        return "", [], []
+
+
+def retrieve_context(
+    query_string: str,
+    top_k: int = 3,
+    *,
+    supplement: str = "",
+    region_boost_tokens: list[str] | None = None,
+) -> tuple[str, list[str]]:
+    context, citations, _evidence = retrieve_context_with_evidence(
+        query_string,
+        top_k=top_k,
+        supplement=supplement,
+        region_boost_tokens=region_boost_tokens,
+    )
+    return context, citations
 
 def get_collection_stats() -> dict:
     """Returns total rule count and the last 10 inserted intel items."""

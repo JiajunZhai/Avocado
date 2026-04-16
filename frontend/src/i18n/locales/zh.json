@@ -72,8 +72,35 @@
       "history": {
         "title": "近期生成记录",
         "empty": "流水无记录",
+        "filter_label": "筛选",
+        "open": "打开",
+        "compare": "对比",
+        "picked": "已选",
+        "refresh": "刷新文案",
+        "compare_picked": "对比已选",
+        "time": {
+          "just_now": "刚刚",
+          "minutes_ago": "{{minutes}} 分钟前",
+          "hours_ago": "{{hours}} 小时前",
+          "days_ago": "{{days}} 天前"
+        },
         "action_issue": "下发任务",
         "action_script": "生成脚本"
+      },
+      "compare": {
+        "title": "对比",
+        "close": "关闭",
+        "params_a": "参数 A",
+        "params_b": "参数 B",
+        "copy_diff_headlines": "文案差异（标题）",
+        "copy_diff_primary": "文案差异（主文案）",
+        "copy_diff_btn": "复制差异",
+        "added_in_b": "B 新增",
+        "removed_from_a": "A 移除",
+        "none": "无",
+        "compliance_diff_terms": "合规差异（命中词）",
+        "new_terms_in_b": "B 新增命中词",
+        "gone_terms_from_a": "A 消失命中词"
       },
       "card_missing_base": "参数缺失",
       "btn_launch_lab": "开始创意",
@@ -90,6 +117,10 @@
         "header": "档案数据源",
         "title": "当前基础档案",
         "base_params": "核心投放参数",
+        "core_gameplay": "核心玩法",
+        "usp_extracted": "USP 提取",
+        "expand": "展开",
+        "collapse": "收起",
         "missing": "暂无绑定项目...",
         "view_details": "展开档案",
         "scripts": "成片剧本"
@@ -113,7 +144,95 @@
       },
       "synthesis_status": "准备参数配置中...",
       "alert_no_project": "请先选定一个项目结构。",
-      "markdown_saved": "已导出 Markdown（相对仓库根目录）: {{path}}"
+      "markdown_saved": "已导出 Markdown（相对仓库根目录）: {{path}}",
+      "console": {
+        "output_type": "输出类型",
+        "full_sop": "🎬 全量 SOP",
+        "quick_copy": "✍️ 极速文案",
+        "gen_mode": "生成模式",
+        "gen_mode_auto": "AUTO（草案→导演）",
+        "gen_mode_draft": "仅草案（更快）",
+        "gen_mode_director": "仅导演（更全）",
+        "quick_copy_config": "极速文案配置",
+        "expand": "展开",
+        "regions_multi": "地区（多选）",
+        "empty_region_hint": "留空则默认当前地区",
+        "quantity_headlines": "数量（标题）",
+        "tone": "语气",
+        "tones": {
+          "humor": "幽默",
+          "pro": "专业",
+          "clickbait": "标题党",
+          "benefit": "利益诱导",
+          "fomo": "恐惧缺失（FOMO）"
+        },
+        "localization": "多语种",
+        "empty_locale_hint": "留空则默认 EN",
+        "copy_refresher": "一键洗稿",
+        "compliance_suggest": "合规改写建议（LLM）",
+        "compliance_suggest_hint": "云端可用时，为命中项生成更安全的改写建议。",
+        "base_script_placeholder": "基础脚本 ID（如 SOP-ABC123）",
+        "refresh_copy_btn": "✨ 刷新文案",
+        "refresh_copy_hint": "保留原分镜逻辑，仅刷新标题/描述矩阵。"
+      },
+      "dashboard": {
+        "title": "生成结果页",
+        "packaging": "物料打包中…",
+        "btn_markdown": "Markdown",
+        "btn_xlsx": "XLSX",
+        "btn_pdf": "PDF",
+        "btn_open_folder": "打开文件夹",
+        "close": "关闭",
+        "storyboard_viewer": "分镜预览",
+        "copy_markdown": "复制 Markdown",
+        "loading_markdown": "加载 Markdown 中…",
+        "no_markdown": "暂无 Markdown 内容。",
+        "ad_copy_hub": "文案磁贴盒",
+        "hits_suffix": "条命中",
+        "no_tiles": "暂无文案磁贴。",
+        "copy_all": "一键复制",
+        "headlines": "标题集",
+        "primary_texts": "正文集",
+        "hashtags": "标签"
+      },
+      "feed": {
+        "compiled_blueprint": "生成结果摘要",
+        "resonance_feed": "参数共振",
+        "secure": "已就绪",
+        "standby": "待机",
+        "syncing": "同步中…",
+        "region_node": "地区节点",
+        "platform_node": "渠道节点",
+        "angle_node": "动机节点",
+        "constraint": "约束",
+        "rules": "规则",
+        "emotion": "情绪",
+        "logic": "逻辑",
+        "bgm": "BGM"
+      },
+      "errors": {
+        "synthesis_failed": "生成失败（API 调用异常）",
+        "refresh_failed": "刷新失败（API 调用异常）"
+      },
+      "empty": {
+        "select_project": "请从侧边栏选择一个项目"
+      },
+      "result": {
+        "quick_copy_ready": "极速文案已生成，可直接用于日常 A/B 测试。",
+        "open_dashboard": "打开生成结果页"
+      },
+      "compliance": {
+        "open": "打开合规命中详情",
+        "title": "合规命中详情",
+        "close": "关闭",
+        "hits": "命中列表",
+        "no_hits": "暂无命中。",
+        "suggestions": "改写建议",
+        "no_suggestions": "暂无建议（云端可用时可在请求里开启 compliance_suggest）。",
+        "copy_original": "复制原文",
+        "copy_suggested": "复制建议",
+        "reason": "原因："
+      }
     },
     "oracle": {
       "title": "行业知识图谱",

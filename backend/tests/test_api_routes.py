@@ -40,7 +40,7 @@ def _valid_script_result():
     }
 
 def test_api_generate_local_success(client, monkeypatch):
-    monkeypatch.setattr(main, "retrieve_context", lambda *_args, **_kwargs: ("ctx", ["src1"]))
+    monkeypatch.setattr(main, "retrieve_context_with_evidence", lambda *_args, **_kwargs: ("ctx", ["src1"], [{"rule": "r1", "match_score": 0.8}]))
     monkeypatch.setattr(
         "ollama_client.generate_with_local_llm",
         lambda **_kwargs: LocalLLMResult(_valid_script_result(), 1200)
@@ -54,9 +54,17 @@ def test_api_generate_local_success(client, monkeypatch):
     assert data.get("markdown_path")
     assert data["markdown_path"].startswith("@OUT/")
     assert data["markdown_path"].endswith(".md")
+    assert "review" in data
+    assert "generation_metrics" in data
+    assert "ad_copy_matrix" in data
+    acm = data["ad_copy_matrix"]
+    assert isinstance(acm.get("primary_texts"), list) and len(acm["primary_texts"]) >= 5
+    assert isinstance(acm.get("headlines"), list) and len(acm["headlines"]) >= 10
+    assert isinstance(acm.get("hashtags"), list) and len(acm["hashtags"]) >= 20
+    assert isinstance(acm.get("visual_stickers"), list) and len(acm["visual_stickers"]) >= 1
 
 def test_api_generate_local_parse_failure(client, monkeypatch):
-    monkeypatch.setattr(main, "retrieve_context", lambda *_args, **_kwargs: ("", []))
+    monkeypatch.setattr(main, "retrieve_context_with_evidence", lambda *_args, **_kwargs: ("", [], []))
     monkeypatch.setattr(
         "ollama_client.generate_with_local_llm",
         lambda **_kwargs: LocalLLMResult(
@@ -76,7 +84,7 @@ def test_api_generate_local_parse_failure(client, monkeypatch):
     assert detail["error_code"] == "LOCAL_JSON_PARSE_FAILED"
 
 def test_api_generate_local_schema_mismatch(client, monkeypatch):
-    monkeypatch.setattr(main, "retrieve_context", lambda *_args, **_kwargs: ("", []))
+    monkeypatch.setattr(main, "retrieve_context_with_evidence", lambda *_args, **_kwargs: ("", [], []))
     monkeypatch.setattr(
         "ollama_client.generate_with_local_llm",
         lambda **_kwargs: LocalLLMResult({"hook_score": 1}, None)
@@ -88,13 +96,30 @@ def test_api_generate_local_schema_mismatch(client, monkeypatch):
     assert detail["error_code"] == "LOCAL_SCHEMA_MISMATCH"
 
 def test_api_generate_cloud_fallback_when_no_key(client, monkeypatch):
-    monkeypatch.setattr(main, "retrieve_context", lambda *_args, **_kwargs: ("", []))
+    monkeypatch.setattr(main, "retrieve_context_with_evidence", lambda *_args, **_kwargs: ("", [], []))
     monkeypatch.setattr(main, "cloud_client", None)
     response = client.post("/api/generate", json=_base_generate_payload(engine="cloud"))
     assert response.status_code == 200
     data = response.json()
     assert data["hook_score"] == 95
     assert data.get("markdown_path", "").startswith("@OUT/")
+    assert "review" in data
+    assert "ad_copy_matrix" in data
+    acm = data["ad_copy_matrix"]
+    assert len(acm.get("primary_texts", [])) >= 5
+    assert len(acm.get("headlines", [])) >= 10
+    assert len(acm.get("hashtags", [])) >= 20
+
+
+def test_api_generate_draft_mode_returns_candidates(client, monkeypatch):
+    monkeypatch.setattr(main, "cloud_client", None)
+    payload = _base_generate_payload(engine="cloud")
+    payload["mode"] = "draft"
+    response = client.post("/api/generate", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data.get("drafts"), list)
+    assert data.get("generation_metrics", {}).get("mode") == "draft"
 
 def test_api_extract_url_success(client, monkeypatch):
     monkeypatch.setattr(main, "fetch_playstore_data", lambda _url: {"success": True, "title": "GameA"})

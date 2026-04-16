@@ -98,6 +98,69 @@ def synthesis_to_markdown(
     if mode not in {"cn", "en"}:
         mode = "cn"
     sid = payload.get("script_id", "")
+    # Quick Copy Mode: render a copywriting booklet instead of storyboard table
+    acm = payload.get("ad_copy_matrix")
+    script = payload.get("script")
+    if isinstance(acm, dict) and not isinstance(script, list):
+        def loc(v: Any) -> str:
+            return _translate_for_mode(str(v or ""), mode)
+
+        title = "# 文案矩阵" if mode == "cn" else "# Ad Copy Matrix"
+        lines: list[str] = [
+            title + f"：{project_name}",
+            "",
+            f"- **Project**: {project_name}",
+            f"- **Copy ID**: `{sid}`",
+            f"- **Engine**: `{engine}`",
+            f"- **Region**: `{recipe.get('region', '')}`",
+            f"- **Platform**: `{recipe.get('platform', '')}`",
+            f"- **Angle**: `{recipe.get('angle', '')}`",
+            "",
+        ]
+        variants = acm.get("variants")
+        default_locale = str(acm.get("default_locale") or "en")
+        locales = acm.get("locales") if isinstance(acm.get("locales"), list) else [default_locale]
+        if not isinstance(variants, dict):
+            variants = {default_locale: acm}
+        for loc_code in [str(x) for x in locales if str(x).strip()]:
+            v = variants.get(loc_code) if isinstance(variants, dict) else None
+            if not isinstance(v, dict):
+                continue
+            headlines = v.get("headlines") if isinstance(v.get("headlines"), list) else []
+            primary = v.get("primary_texts") if isinstance(v.get("primary_texts"), list) else []
+            hashtags = v.get("hashtags") if isinstance(v.get("hashtags"), list) else []
+
+            if mode == "cn":
+                lines.extend([f"## 🌍 语言：{loc_code}", "", "## 🎯 核心标题集 (Headlines)", ""])
+            else:
+                lines.extend([f"## 🌍 Locale: {loc_code}", "", "## 🎯 Headlines", ""])
+            for h in headlines:
+                lines.append(f"- {h}")
+
+            if mode == "cn":
+                lines.extend(["", "## 📝 深度描述集 (Primary Texts)", ""])
+            else:
+                lines.extend(["", "## 📝 Primary Texts", ""])
+            for p in primary:
+                lines.append(f"- {p}")
+
+            if mode == "cn":
+                lines.extend(["", "## # 标签 (Hashtags)", ""])
+            else:
+                lines.extend(["", "## # Hashtags", ""])
+            if hashtags:
+                lines.append(" ".join(str(x) for x in hashtags))
+            else:
+                lines.append("_（无）_" if mode == "cn" else "_(none)_")
+            lines.append("")
+
+        # Optional: expert summary
+        if mode == "cn":
+            lines.extend(["## 🕵️‍♂️ 专家总结", "", "本次输出为极速文案模式：不生成分镜，仅用于日更买量测试。"])
+        else:
+            lines.extend(["## 🕵️‍♂️ Expert Notes", "", "Quick Copy Mode output: no storyboard; optimized for daily UA iteration."])
+        return "\n".join(lines)
+
     def loc(v: Any) -> str:
         return _translate_for_mode(str(v or ""), mode)
     if mode == "en":

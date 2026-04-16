@@ -57,8 +57,35 @@
       "history": {
         "title": "Recent Event Log",
         "empty": "No events found",
+        "filter_label": "Filter",
+        "open": "Open",
+        "compare": "Compare",
+        "picked": "Picked",
+        "refresh": "Refresh",
+        "compare_picked": "Compare picked",
+        "time": {
+          "just_now": "Just now",
+          "minutes_ago": "{{minutes}}m ago",
+          "hours_ago": "{{hours}}h ago",
+          "days_ago": "{{days}}d ago"
+        },
         "action_issue": "Issued",
         "action_script": "script"
+      },
+      "compare": {
+        "title": "Compare",
+        "close": "Close",
+        "params_a": "Params A",
+        "params_b": "Params B",
+        "copy_diff_headlines": "Copy diff (headlines)",
+        "copy_diff_primary": "Copy diff (primary texts)",
+        "copy_diff_btn": "Copy diff",
+        "added_in_b": "Added in B",
+        "removed_from_a": "Removed from A",
+        "none": "None",
+        "compliance_diff_terms": "Compliance diff (hit terms)",
+        "new_terms_in_b": "New terms in B",
+        "gone_terms_from_a": "Gone terms from A"
       },
       "card_missing_base": "Base Missing",
       "btn_launch_lab": "Launch Lab",
@@ -72,6 +99,10 @@
         "header": "ENTITY SOURCE",
         "title": "Project Entity Lock",
         "base_params": "USP Matrix",
+        "core_gameplay": "Core Gameplay",
+        "usp_extracted": "USP Extracted",
+        "expand": "Expand",
+        "collapse": "Collapse",
         "missing": "No bound asset...",
         "view_details": "Open Matrix",
         "scripts": "Scripts"
@@ -99,6 +130,95 @@
       "synthesis_status": "Recompiling atomic slots...",
       "alert_no_project": "Please select a Project Workspace first.",
       "markdown_saved": "Markdown export (repo root): {{path}}"
+      ,
+      "console": {
+        "output_type": "OUTPUT TYPE",
+        "full_sop": "🎬 Full SOP",
+        "quick_copy": "✍️ Quick Copy",
+        "gen_mode": "GEN MODE",
+        "gen_mode_auto": "AUTO (Draft→Director)",
+        "gen_mode_draft": "Draft Only (Fast)",
+        "gen_mode_director": "Director Only (Full)",
+        "quick_copy_config": "QUICK COPY CONFIG",
+        "expand": "expand",
+        "regions_multi": "Regions (multi-select)",
+        "empty_region_hint": "Leave empty to default current Region",
+        "quantity_headlines": "Quantity (Headlines)",
+        "tone": "Tone",
+        "tones": {
+          "humor": "Humor",
+          "pro": "Pro",
+          "clickbait": "Clickbait",
+          "benefit": "Benefit",
+          "fomo": "FOMO"
+        },
+        "localization": "Localization",
+        "empty_locale_hint": "Leave empty to default EN",
+        "copy_refresher": "Copy Refresher",
+        "compliance_suggest": "Compliance rewrite (LLM)",
+        "compliance_suggest_hint": "When cloud is available, generate safer rewrite suggestions for hits.",
+        "base_script_placeholder": "Base Script ID (e.g. SOP-ABC123)",
+        "refresh_copy_btn": "✨ Refresh Copy",
+        "refresh_copy_hint": "Keep visuals/storyboard logic; refresh headline/primary matrix only."
+      },
+      "dashboard": {
+        "title": "Result Dashboard",
+        "packaging": "Packaging assets…",
+        "btn_markdown": "Markdown",
+        "btn_xlsx": "XLSX",
+        "btn_pdf": "PDF",
+        "btn_open_folder": "Open Folder",
+        "close": "Close",
+        "storyboard_viewer": "Storyboard Viewer",
+        "copy_markdown": "Copy Markdown",
+        "loading_markdown": "Loading markdown…",
+        "no_markdown": "No markdown available.",
+        "ad_copy_hub": "Ad Copy Hub",
+        "hits_suffix": "hits",
+        "no_tiles": "No ad copy tiles.",
+        "copy_all": "Copy All",
+        "headlines": "Headlines",
+        "primary_texts": "Primary Texts",
+        "hashtags": "Hashtags"
+      },
+      "feed": {
+        "compiled_blueprint": "Compiled Blueprint",
+        "resonance_feed": "Resonance Feed",
+        "secure": "SECURE",
+        "standby": "STANDBY",
+        "syncing": "SYNCING...",
+        "region_node": "Region Node",
+        "platform_node": "Platform Node",
+        "angle_node": "Angle Node",
+        "constraint": "Constraint",
+        "rules": "Rules",
+        "emotion": "Emotion",
+        "logic": "Logic",
+        "bgm": "BGM"
+      },
+      "errors": {
+        "synthesis_failed": "Synthesis Failed via API",
+        "refresh_failed": "Refresh Failed via API"
+      },
+      "empty": {
+        "select_project": "Select project from sidebar"
+      },
+      "result": {
+        "quick_copy_ready": "Quick Copy compiled. Ready for daily A/B testing.",
+        "open_dashboard": "Open Result Dashboard"
+      },
+      "compliance": {
+        "open": "Open compliance details",
+        "title": "Compliance Details",
+        "close": "Close",
+        "hits": "Hits",
+        "no_hits": "No hits.",
+        "suggestions": "Rewrite Suggestions",
+        "no_suggestions": "No suggestions (enable compliance_suggest on request when cloud is available).",
+        "copy_original": "Copy original",
+        "copy_suggested": "Copy suggested",
+        "reason": "Reason:"
+      }
     },
     "market": {
       "saturation": "Saturation Level",

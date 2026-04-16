@@ -1,8 +1,8 @@
 # 🧠 Project Memory Bank / Context Document
 
 **Project Name**: AdCreative AI Script Generator
-**Last Updated**: 2026-04-15
-**Version Level**: Stability Patch V2.1 (CN storyboard de-dup execution layout)
+**Last Updated**: 2026-04-16
+**Version Level**: Stability Patch V2.2 (1+1+3 pipeline: draft/director modes + RAG evidence + auto review)
 
 This document serves as the global memory bank and active context tracker for the project. It outlines exactly where the project stands, structural choices, and development conventions to assist future AI/developer context loading.
 
@@ -172,6 +172,40 @@ The project follows a decoupled **Monorepo** structure.
   - Removed in CN mode: `画面释义（中文）` / `配音释义` / `贴纸释义`.
   - EN mode remains unchanged (keeps note-style bridge fields for cross-language review workflows).
   - **Tests**: `backend/tests/test_md_export.py` updated to assert removed CN rows are absent.
+- **[Phase 19] 1+1+3 生成链路整改：草案/导演分阶段 + RAG 结构化证据 + 自动审校 (2026-04-16)**:
+  - **语义**：`1` = 项目/游戏 DNA（workspace）；`1` = 向量知识库检索（Oracle）；`3` = 地区 + 平台 + 心理策略因子 JSON。
+  - **`POST /api/generate` 新增 `mode`**：`draft` | `director` | `auto`（默认 `auto`：先草案再导演全稿）。
+  - **Prompt 拆分**（[backend/prompts.py](backend/prompts.py)）：
+    - `render_draft_prompt`：轻量草案 JSON（多条 hook/叙事候选 + `pick_recommendation`）。
+    - `render_director_prompt`：最终分镜导演稿；可注入入选草案 JSON。`render_system_prompt` 保留为导演稿别名以兼容旧调用。
+  - **RAG 结构化证据**（[backend/refinery.py](backend/refinery.py)）：
+    - `collection.query` 返回 `scores`；新增 `retrieve_context_with_evidence()`，每条证据含 `rule`、`source`、`year_quarter`、`match_score`、`reason_tag`。
+    - `retrieve_context()` 仍为 `(context, citations)` 兼容旧代码。
+  - **生成响应扩展**（[backend/main.py](backend/main.py)）：
+    - 可选字段：`drafts`、`review`（规则审校：issues/warnings/score_breakdown）、`rag_evidence`、`generation_metrics`（含 `mode`、`elapsed_ms`、`rag_rules_used`）。
+    - 本地路径：`generate_script_local` 使用 `retrieve_context_with_evidence` 并合并 `rag_evidence`。
+  - **Lab UI**（[frontend/src/pages/Lab.tsx](frontend/src/pages/Lab.tsx)）：`GEN MODE` 下拉（auto/draft/director），`localStorage` 键 `sop_synthesis_mode`；结果区展示 `review` 与草案摘要。
+  - **测试**：`test_api_routes.py` 对 `retrieve_context` 的 monkeypatch 改为 `retrieve_context_with_evidence`；`test_refinery.py` 覆盖证据结构。
+  - **验证**：合并后应跑 `pytest tests/test_api_routes.py tests/test_refinery.py tests/test_md_export.py` 确认 `mode` / `review` / RAG 不破坏既有 JSON 契约。
+- **[Phase 20] 极速文案模式（Quick Copy Mode）+ 文案超市 + Refresh Copy + CSV 导出 (2026-04-16)**:
+  - **痛点**：日更投放文案需要高频迭代；不应为几条标题强制生成整套分镜（Token 成本 + UI 负担）。
+  - **双轨生成（前端输出类型开关）**（[frontend/src/pages/Lab.tsx](frontend/src/pages/Lab.tsx)）：
+    - `🎬 Full SOP`：仍走 `POST /api/generate`（支持 `mode=draft|director|auto`）。
+    - `✍️ Quick Copy`：走 `POST /api/quick-copy`（只产出文案矩阵，不生成分镜）。
+    - 本地持久化：`sop_output_type`、`sop_copy_quantity`、`sop_copy_tones`、`sop_copy_locales`。
+  - **Quick Copy 后端 API**（[backend/main.py](backend/main.py)）：
+    - `POST /api/quick-copy`：入参支持 `quantity`（每语言 headlines 数量）、`tones`、`locales`；返回 `ad_copy_matrix` + `markdown_path`（Copywriting Booklet）。
+    - `POST /api/quick-copy/refresh`：输入 `project_id + base_script_id`，从 workspace 的 `history_log` 读取脚本上下文，仅刷新文案（保持分镜不变）。
+  - **专用提示词（文案工厂）**（[backend/prompts.py](backend/prompts.py)）：
+    - `render_copy_prompt`：强制输出 `ad_copy_matrix`（按 locale variants），强调 **点击欲望**、**多变量组合（卖点词+CTA+情绪钩子）**、多心理动机覆盖、以及非英语的 **Transcreation**（非机翻）。
+  - **“文案超市”结果形态 + 导出**（[frontend/src/pages/Lab.tsx](frontend/src/pages/Lab.tsx)）：
+    - Quick Copy 结果区全屏矩阵化呈现（按 locale 卡片）。
+    - 支持 **CSV 导出**（用于 TikTok Ads Manager 批量上传）。
+    - 支持 **就地编辑** headlines（contentEditable onBlur 写回到 `synthesisResult.ad_copy_matrix`）。
+  - **MD 渲染适配**（[backend/md_export.py](backend/md_export.py)）：
+    - 当 payload 仅含 `ad_copy_matrix`（无 `script`）时，导出为 “Copywriting Booklet” Markdown（标题集/描述集/标签集）。
+  - **测试**：
+    - 新增 `backend/tests/test_quick_copy.py` 覆盖 `/api/quick-copy` 结构与数量约束（cloud no-key fallback）；`refresh` 缺历史时返回 400/404 均可接受（依 fixture workspace）。
 - **[Phase 14] Director button system + palette + Tailwind v4 CSS hardening (2026-04-13–14)**:
   - **`frontend/src/index.css`**: `btn-director-*` + `success` tokens; `header-module-tab` / `nav-director-link--active`; segmented control border aligned with secondary outline weight. **Tailwind v4 limitation**: `@apply` inside `@layer utilities` **must not** reference other custom utilities from the same file (e.g. `transition-director-*`, `ring-focus-brand`, `shadow-elev-1`). Mitigations in tree: duplicate **focus ring** utilities on button rules; **transition** as raw `transition-property` / `var(--duration-*)`; **nav active shadow** inlined instead of `@apply shadow-elev-1`. Standalone classes `.ring-focus-brand`, `.transition-director-colors`, `.transition-director-transform` remain for TSX.
   - **`MainLayout.tsx`**: New Script / module tabs / Strategy Matrix / ghost nav actions aligned to the button system; sidebar **logo** uses neutral `bg-on-surface text-on-primary` (not primary-dim); active route icons use **`text-secondary-fixed-dim`**.
@@ -185,9 +219,11 @@ The project follows a decoupled **Monorepo** structure.
   - **`backend/ollama_client.py`**: **`LocalLLMResult(output, total_tokens)`** returned by **`generate_with_local_llm`**; tests monkeypatch must wrap payloads in `LocalLLMResult`.
   - **Env tuning**: `USAGE_DAILY_TOKEN_BUDGET`, `USAGE_TOKENS_ESTIMATE_GENERATE_CLOUD` / `_LOCAL`, `USAGE_TOKENS_ESTIMATE_EXTRACT` when provider `usage` is missing.
 
-### ✅ Latest Validation Snapshot (2026-04-15)
+### ✅ Latest Validation Snapshot (2026-04-16)
 
-- Backend: run `pytest tests/ -q` excluding known-broken collectors if any (e.g. `test_engine.py` import drift); **`test_api_routes`**, **`test_business_flow_e2e`**, **`test_md_export`**, **`test_ollama_client`**, **`test_refinery`**, **`test_scraper`** exercised after Phase 15; full `tests/` collection may fail until `test_engine.py` is repaired.
+- Backend (Phase 19 spot-check): `pytest tests/test_api_routes.py tests/test_refinery.py tests/test_md_export.py` → **21 passed** (covers `mode` / `review` / `retrieve_context_with_evidence` mocks + md export).
+- Backend (Phase 20 spot-check): `pytest tests/test_quick_copy.py` → **2 passed** (Quick Copy endpoint contract).
+- Backend (historical): run `pytest tests/ -q` excluding known-broken collectors if any (e.g. `test_engine.py` import drift); **`test_api_routes`**, **`test_business_flow_e2e`**, **`test_md_export`**, **`test_ollama_client`**, **`test_refinery`**, **`test_scraper`** exercised after Phase 15; full `tests/` collection may fail until `test_engine.py` is repaired.
 - Frontend: `npm run build` → **success** (includes Lab i18n + unused-import cleanups where needed).
 - Outcomes:
   - Local/cloud generation failures stay explicit in API and UI; PDF export blocked on bad payloads.

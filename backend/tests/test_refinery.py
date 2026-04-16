@@ -35,3 +35,20 @@ def test_retrieve_context_supplement_passes_to_query(monkeypatch):
     refinery.retrieve_context("a b", top_k=2, supplement="game merge puzzle", region_boost_tokens=["Japan"])
     assert "merge" in seen["texts"][0]
     assert seen["boost"] == ["Japan"]
+
+
+def test_retrieve_context_with_evidence_shape(monkeypatch):
+    class FakeCollection:
+        def query(self, *args, **kwargs):
+            return {
+                "documents": [["doc-a"]],
+                "metadatas": [[{"source": "s", "year_quarter": "2026-Q2"}]],
+                "scores": [[0.77]],
+            }
+
+    monkeypatch.setattr(refinery, "collection", FakeCollection())
+    ctx, cites, evidence = refinery.retrieve_context_with_evidence("query")
+    assert "Context Rule 1" in ctx
+    assert cites == ["s (2026-Q2)"]
+    assert isinstance(evidence, list) and evidence
+    assert evidence[0]["match_score"] == 0.77
