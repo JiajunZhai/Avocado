@@ -21,5 +21,10 @@
     },
     "preferred_bgm": "High-tempo J-Pop/Anime Rock for action; Lofi/Piano for 'Iyashikei' (healing) or Simulation games.",
     "focus": "Character Emotional Bond (Engagement) > Gacha Thrill (Monetization) > Competitive Status (Retention)",
-    "short_name": "JP"
+    "short_name": "JP",
+    "taboo": [
+        "General extreme violence or severe local offenses"
+    ],
+    "local_hook": "Local cultural meme/hook placeholder",
+    "language_nuance": "Standard localization tone"
 }

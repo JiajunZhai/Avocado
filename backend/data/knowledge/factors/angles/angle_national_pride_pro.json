@@ -15,5 +15,12 @@
         "Fear of Collective Humiliation"
     ],
     "kpi_focus": "High ROAS in GCC (Middle East), Brazil, and Vietnam. Best for SLG/MMO.",
-    "short_name": "Pride"
+    "short_name": "Pride",
+    "priority_weight": 1.0,
+    "script_logic": {
+        "hook": "Global Conflict: Show a world map where one country's color is being wiped out by a rival country's color.",
+        "build_up": "The Shame Factor: Display a real-time (fake) leaderboard. 'Your Country is Rank #99. [Rival Country] is Rank #1'.",
+        "climax": "The Hero Call: A local language voiceover: 'Where are our [Nationality] brothers? We need you in Sector 7!'",
+        "cta": "The Turning Point: Show a few new players joining and the map color starting to push back."
+    }
 }

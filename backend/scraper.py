@@ -1,13 +1,12 @@
 import json
-import os
 import re
 from typing import Dict, Any, Optional
 
 from google_play_scraper import app as gplay_app
-from ollama_client import generate_with_local_llm
 
 # -----------------------------------------------------------------------------
-# System prompt: bilingual director archive (local LLM / future cloud parity)
+# System prompt: bilingual director archive (used by the DeepSeek cloud path in
+# main.extract_url; scraper itself only ships a rule-based fallback).
 # English-first distillation; Chinese = director-practical for domestic editors.
 # -----------------------------------------------------------------------------
 EXTRACT_USP_VIA_LLM_SYSTEM_PROMPT = """You are a senior Mobile UA Creative Director and bilingual localization bridge.
@@ -20,20 +19,18 @@ Use a strict two-pass mental order:
 
 ## Output schema (pure JSON, no markdown fences)
 {
-  "core_gameplay": {
-    "en": "Precise core loop / session shape / main mechanics. Professional UA wording. No hype adjectives unless the store text uses them.",
-    "cn": "给国内剪辑/导演的实战解读：核心玩法如何呈现、镜头从哪类画面截取、节奏建议。"
+  "core_loop": "Precise core loop / session shape / main mechanics. (e.g. Mow down -> Drop -> Upgrade)",
+  "usp": {
+    "visual": "Visual hooks",
+    "gameplay": "Gameplay hooks",
+    "stats": "Stat progression hooks",
+    "social": "Social/competitive hooks"
   },
-  "value_hooks": [
-    {
-      "en": "Single concrete hook or value prop in English for downstream prompt engineering.",
-      "cn": "对应中文卖点 + 导演深度释义（转化逻辑、镜头与字幕可怎么配合）。"
-    }
-  ],
-  "target_persona": {
-    "en": "Target player segment: motivations, genre literacy, monetization sensitivity—UA-professional.",
-    "cn": "人群画像（导演视角）：素材语气、禁忌、更适合的爽点表达方式。"
-  }
+  "persona": "Target player segment: motivations, genre literacy, stress-relief.",
+  "visual_dna": "Art style description (e.g. anime, realistic, dark, vibrant).",
+  "competitive_set": [
+    "Tag1", "Tag2"
+  ]
 }
 
 ## Rules
@@ -113,9 +110,11 @@ def _serialize_director_archive(
 ) -> str:
     """Stable string for API `extracted_usp` and downstream prompts."""
     payload = {
-        "core_gameplay": archive["core_gameplay"],
-        "value_hooks": archive["value_hooks"],
-        "target_persona": archive["target_persona"],
+        "core_loop": archive.get("core_loop", ""),
+        "usp": archive.get("usp", {}),
+        "persona": archive.get("persona", ""),
+        "visual_dna": archive.get("visual_dna", ""),
+        "competitive_set": archive.get("competitive_set", []),
     }
     parts = [json.dumps(payload, ensure_ascii=False, indent=2)]
     parts.append(f"\n\n[Store scale signal]\ninstalls: {installs}\n")
@@ -213,10 +212,27 @@ def _rule_based_director_archive(game_title: str, metadata: Dict[str, Any]) -> D
         f"安装量级参考：{installs}。素材语气宜与商店调性一致；若描述偏轻休闲，避免过度硬核电竞话术。"
     )
 
+    visual_dna = "Casual distinct style"
+    if "anime" in desc or "waifu" in desc:
+        visual_dna = "Anime style, character focused"
+    elif "dark" in desc or "gothic" in desc:
+        visual_dna = "Dark fantasy, mature tone"
+    
+    comparatives = [genre.lower()]
+    if "rpg" in genre.lower():
+        comparatives.append("role-playing")
+
     return {
-        "core_gameplay": {"en": core_en.strip(), "cn": core_cn.strip()},
-        "value_hooks": value_hooks[:5],
-        "target_persona": {"en": aud_en.strip(), "cn": aud_cn.strip()},
+        "core_loop": f"{core_en.strip()} / {core_cn.strip()}",
+        "usp": {
+            "gameplay": hooks_en[0] if len(hooks_en) > 0 else "",
+            "visual": hooks_en[1] if len(hooks_en) > 1 else "",
+            "stats": hooks_en[2] if len(hooks_en) > 2 else "",
+            "social": hooks_en[3] if len(hooks_en) > 3 else ""
+        },
+        "persona": f"{aud_en.strip()} / {aud_cn.strip()}",
+        "visual_dna": visual_dna,
+        "competitive_set": comparatives,
     }
 
 
@@ -229,71 +245,25 @@ def _rule_based_usp(game_title: str, metadata: Dict[str, Any]) -> str:
     )
 
 
-def _local_llm_usp_with_tokens(game_title: str, metadata: Dict[str, Any]) -> tuple[str, int | None]:
-    desc = metadata.get("description", "")[:1500]
-    genre = metadata.get("genre", "Game")
-    installs = metadata.get("installs", "Unknown")
-    recent_changes = metadata.get("recentChanges", "")[:300]
+def extract_usp_via_llm(game_title: str, metadata: Dict[str, Any]) -> str:
+    """Rule-based distillation of store metadata into a bilingual director archive.
 
-    user_prompt = (
-        f"Game title: {game_title}\n"
-        f"Genre (store): {genre}\n"
-        f"Installs (store label): {installs}\n"
-        f"Recent changes / What's new:\n{recent_changes}\n\n"
-        f"--- Raw store description (may truncate) ---\n{desc}\n"
-    )
-    model_name = os.getenv("OLLAMA_MODEL_EXTRACT", "gemma4:e4b")
-    res = generate_with_local_llm(
-        system_prompt=EXTRACT_USP_VIA_LLM_SYSTEM_PROMPT,
-        user_input=user_prompt,
-        model=model_name,
-        expected_json=True,
-    )
-    local_result = res.output
-    tokens = res.total_tokens
-
-    if not isinstance(local_result, dict) or local_result.get("success") is False:
-        return "", None
-
-    if not _validate_director_archive(local_result):
-        return "", None
-
-    text = _serialize_director_archive(
-        local_result,
-        installs,
-        recent_changes,
-    )
-    return text, tokens
-
-
-def _extract_usp_core(
-    game_title: str, metadata: Dict[str, Any], engine: str
-) -> tuple[str, int | None, bool]:
+    The cloud LLM path lives in ``main.extract_url``; this helper is the
+    deterministic fallback used when the cloud call fails or the key is absent.
     """
-    Returns (archive_text, provider_tokens_or_none, used_llm).
-    """
-    if engine == "local":
-        local_usp, tok = _local_llm_usp_with_tokens(game_title, metadata)
-        if local_usp:
-            return local_usp, tok, True
-    return _rule_based_usp(game_title, metadata), None, False
-
-
-def extract_usp_via_llm(game_title: str, metadata: Dict[str, Any], engine: str = "cloud") -> str:
-    """
-    Turn store metadata into a bilingual director-archive string (JSON block + store cues).
-    If engine == ``local``, runs Ollama with truncated description; otherwise rule-based distillation.
-    """
-    text, _, _ = _extract_usp_core(game_title, metadata, engine)
-    return text
+    return _rule_based_usp(game_title, metadata)
 
 
 def extract_usp_via_llm_with_usage(
-    game_title: str, metadata: Dict[str, Any], engine: str = "cloud"
+    game_title: str, metadata: Dict[str, Any]
 ) -> tuple[str, int | None, bool]:
-    """Same as ``extract_usp_via_llm`` plus token usage when the local LLM path succeeds."""
-    return _extract_usp_core(game_title, metadata, engine)
+    """Rule-based variant that also reports ``(tokens, used_llm)`` for the usage tracker.
+
+    Rule-based distillation consumes no LLM tokens, so this always returns
+    ``(text, None, False)``.
+    """
+    return _rule_based_usp(game_title, metadata), None, False
 
 
-# Backward-compatible name used in older tests and docs
+# Backward-compatible alias used in older tests and docs.
 extract_usp_via_llm_mock = extract_usp_via_llm

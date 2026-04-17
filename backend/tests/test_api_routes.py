@@ -1,5 +1,5 @@
 import main
-from ollama_client import LocalLLMResult
+
 
 def _base_generate_payload(engine: str = "cloud"):
     """Valid body for POST /api/generate (matches workspace + insight JSON ids in repo fixtures)."""
@@ -39,14 +39,38 @@ def _valid_script_result():
         "competitor_trend": "trend"
     }
 
-def test_api_generate_local_success(client, monkeypatch):
-    monkeypatch.setattr(main, "retrieve_context_with_evidence", lambda *_args, **_kwargs: ("ctx", ["src1"], [{"rule": "r1", "match_score": 0.8}]))
+def test_api_generate_cloud_success(client, monkeypatch):
+    """engine=cloud end-to-end: director stage returns a valid JSON script."""
+    import json as _json
+
     monkeypatch.setattr(
-        "ollama_client.generate_with_local_llm",
-        lambda **_kwargs: LocalLLMResult(_valid_script_result(), 1200)
+        main,
+        "retrieve_context_with_evidence",
+        lambda *_args, **_kwargs: ("ctx", ["src1"], [{"rule": "r1", "match_score": 0.8}]),
     )
 
-    response = client.post("/api/generate", json=_base_generate_payload(engine="local"))
+    script_json = _json.dumps(_valid_script_result())
+
+    class _FakeMsg:
+        def __init__(self, content): self.content = content
+
+    class _FakeChoice:
+        def __init__(self, content): self.message = _FakeMsg(content)
+
+    class _FakeResponse:
+        def __init__(self, content): self.choices = [_FakeChoice(content)]
+
+    class _FakeCloud:
+        class chat:  # noqa: N801
+            class completions:
+                @staticmethod
+                def create(**_kwargs):
+                    return _FakeResponse(script_json)
+
+    monkeypatch.setattr(main, "cloud_client", _FakeCloud())
+    payload = _base_generate_payload(engine="cloud")
+    payload["mode"] = "director"
+    response = client.post("/api/generate", json=payload)
     assert response.status_code == 200
     data = response.json()
     assert data["hook_score"] == 80
@@ -63,69 +87,91 @@ def test_api_generate_local_success(client, monkeypatch):
     assert isinstance(acm.get("hashtags"), list) and len(acm["hashtags"]) >= 20
     assert isinstance(acm.get("visual_stickers"), list) and len(acm["visual_stickers"]) >= 1
 
-def test_api_generate_local_parse_failure(client, monkeypatch):
-    monkeypatch.setattr(main, "retrieve_context_with_evidence", lambda *_args, **_kwargs: ("", [], []))
-    monkeypatch.setattr(
-        "ollama_client.generate_with_local_llm",
-        lambda **_kwargs: LocalLLMResult(
-            {
-                "success": False,
-                "error_code": "LOCAL_JSON_PARSE_FAILED",
-                "error_message": "Local model output is not valid JSON.",
-                "raw_excerpt": "not-json",
-            },
-            None,
-        )
-    )
 
-    response = client.post("/api/generate", json=_base_generate_payload(engine="local"))
-    assert response.status_code == 502
-    detail = response.json()["detail"]
-    assert detail["error_code"] == "LOCAL_JSON_PARSE_FAILED"
-
-def test_api_generate_local_schema_mismatch(client, monkeypatch):
-    monkeypatch.setattr(main, "retrieve_context_with_evidence", lambda *_args, **_kwargs: ("", [], []))
-    monkeypatch.setattr(
-        "ollama_client.generate_with_local_llm",
-        lambda **_kwargs: LocalLLMResult({"hook_score": 1}, None)
-    )
-
-    response = client.post("/api/generate", json=_base_generate_payload(engine="local"))
-    assert response.status_code == 502
-    detail = response.json()["detail"]
-    assert detail["error_code"] == "LOCAL_SCHEMA_MISMATCH"
-
-def test_api_generate_cloud_fallback_when_no_key(client, monkeypatch):
+def test_api_generate_cloud_fails_loud_without_key(client, monkeypatch):
+    """When engine=cloud but DEEPSEEK_API_KEY is absent, the request must 502 instead of
+    silently falling back to a useless single-shot mock SOP."""
     monkeypatch.setattr(main, "retrieve_context_with_evidence", lambda *_args, **_kwargs: ("", [], []))
     monkeypatch.setattr(main, "cloud_client", None)
     response = client.post("/api/generate", json=_base_generate_payload(engine="cloud"))
-    assert response.status_code == 200
-    data = response.json()
-    assert data["hook_score"] == 95
-    assert data.get("markdown_path", "").startswith("@OUT/")
-    assert "review" in data
-    assert "ad_copy_matrix" in data
-    acm = data["ad_copy_matrix"]
-    assert len(acm.get("primary_texts", [])) >= 5
-    assert len(acm.get("headlines", [])) >= 10
-    assert len(acm.get("hashtags", [])) >= 20
+    assert response.status_code == 502
+    detail = response.json()["detail"]
+    assert detail["error_code"] == "CLOUD_UNAVAILABLE"
+
+
+def test_api_generate_cloud_director_failure_surfaces(client, monkeypatch):
+    """If the cloud director call explodes, caller must see CLOUD_SYNTHESIS_FAILED (not a mock)."""
+    monkeypatch.setattr(main, "retrieve_context_with_evidence", lambda *_args, **_kwargs: ("", [], []))
+
+    class _Boom:
+        class chat:  # noqa: N801 (matches openai shape)
+            class completions:
+                @staticmethod
+                def create(**_kwargs):
+                    raise RuntimeError("boom director")
+
+    monkeypatch.setattr(main, "cloud_client", _Boom())
+    payload = _base_generate_payload(engine="cloud")
+    payload["mode"] = "director"  # skip draft so the boom is unambiguously at director stage
+    response = client.post("/api/generate", json=payload)
+    assert response.status_code == 502
+    detail = response.json()["detail"]
+    assert detail["error_code"] == "CLOUD_SYNTHESIS_FAILED"
+    assert "boom director" in detail["error_message"]
+    assert isinstance(detail.get("elapsed_ms"), int)
 
 
 def test_api_generate_draft_mode_returns_candidates(client, monkeypatch):
-    monkeypatch.setattr(main, "cloud_client", None)
+    """Draft mode must reach the model; we mock the cloud client so it returns a real JSON draft set."""
+    import json as _json
+
+    draft_json = _json.dumps({
+        "drafts": [
+            {
+                "id": "D1",
+                "title": "Fast hook",
+                "hook": "Start with stakes",
+                "story_arc": "stakes -> payoff",
+                "gameplay_bridge": "show mechanic in 2 shots",
+                "risk_flags": [],
+                "estimated_ctr": 81,
+                "estimated_quality": 79,
+            }
+        ],
+        "pick_recommendation": "D1",
+    })
+
+    class _FakeMsg:
+        def __init__(self, content): self.content = content
+
+    class _FakeChoice:
+        def __init__(self, content): self.message = _FakeMsg(content)
+
+    class _FakeResponse:
+        def __init__(self, content): self.choices = [_FakeChoice(content)]
+
+    class _FakeCloud:
+        class chat:  # noqa: N801
+            class completions:
+                @staticmethod
+                def create(**_kwargs):
+                    return _FakeResponse(draft_json)
+
+    monkeypatch.setattr(main, "retrieve_context_with_evidence", lambda *_args, **_kwargs: ("", [], []))
+    monkeypatch.setattr(main, "cloud_client", _FakeCloud())
     payload = _base_generate_payload(engine="cloud")
     payload["mode"] = "draft"
     response = client.post("/api/generate", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data.get("drafts"), list)
+    assert isinstance(data.get("drafts"), list) and data["drafts"]
     assert data.get("generation_metrics", {}).get("mode") == "draft"
 
 def test_api_extract_url_success(client, monkeypatch):
     monkeypatch.setattr(main, "fetch_playstore_data", lambda _url: {"success": True, "title": "GameA"})
-    monkeypatch.setattr("scraper.extract_usp_via_llm_with_usage", lambda *_args: ("USP A", None, False))
+    monkeypatch.setattr("scraper.extract_usp_via_llm_with_usage", lambda *_args, **_kwargs: ("USP A", None, False))
     monkeypatch.setattr(main, "cloud_client", None)
-    response = client.post("/api/extract-url", json={"url": "https://x", "engine": "cloud"})
+    response = client.post("/api/extract-url", json={"url": "https://x"})
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
@@ -133,7 +179,7 @@ def test_api_extract_url_success(client, monkeypatch):
 
 def test_api_extract_url_failure(client, monkeypatch):
     monkeypatch.setattr(main, "fetch_playstore_data", lambda _url: {"success": False, "error": "boom"})
-    response = client.post("/api/extract-url", json={"url": "https://x", "engine": "cloud"})
+    response = client.post("/api/extract-url", json={"url": "https://x"})
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is False
@@ -149,7 +195,7 @@ def test_api_export_pdf_success(client, monkeypatch):
 
 def test_api_export_pdf_rejects_error_placeholder(client):
     bad_data = _valid_script_result()
-    bad_data["hook_reasoning"] = "Ollama parsing failure"
+    bad_data["hook_reasoning"] = "CLOUD_SYNTHESIS_FAILED upstream"
     response = client.post("/api/export/pdf", json={"data": bad_data})
     assert response.status_code == 400
 

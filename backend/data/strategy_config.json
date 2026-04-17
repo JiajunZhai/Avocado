@@ -1,0 +1,21 @@
+{
+  "noise_filter": {
+    "min_impressions": 2000,
+    "min_clicks": 20
+  },
+  "weight_adjustment_trigger": {
+    "min_spend": 50,
+    "ctr_multiplier": 1.1,
+    "cvr_multiplier": 1.1
+  },
+  "logic_distill_trigger": {
+    "min_spend": 1000,
+    "ctr_multiplier": 1.5,
+    "cvr_multiplier": 1.5
+  },
+  "risk_threshold": {
+    "min_spend": 50,
+    "ctr_multiplier": 0.5,
+    "max_project_failures": 3
+  }
+}

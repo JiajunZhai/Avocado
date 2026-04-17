@@ -20,5 +20,12 @@
     },
     "commercial_bridge": "After the failure, immediately show a 2-second 'Correct Speedrun' to prove the game is winnable, then cut to CTA.",
     "core_emotion": "Frustration, Superiority, and Compensatory Control",
-    "short_name": "FailTrap"
+    "short_name": "FailTrap",
+    "priority_weight": 1.0,
+    "script_logic": {
+        "hook": "The 'Obvious' Hook: Within the first 2s, present a scenario with a solution so obvious that a 5-year-old could solve it.",
+        "build_up": "The 'Logical Betrayal': The player's cursor/hand must hesitate, move toward the correct choice, but at the last millisecond, commit to a 'Spectacularly Logical Failure' (making it look like a miscalculation, not just random stupidity).",
+        "climax": "Exaggerated Consequence: Visual failure must be catastrophic—characters crying, towers collapsing, or massive gold loss with 'Negative Numbers' popping up.",
+        "cta": "The 'Superiority Call': Overlay text must move from 'Why?' to 'I bet you can't'. Use phrases like 'Only 1% reach Level 10' or 'Are you smarter than this bot?'."
+    }
 }

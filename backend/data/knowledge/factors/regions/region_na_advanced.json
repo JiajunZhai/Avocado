@@ -21,5 +21,10 @@
         "copywriting": "Minimalist. Use slang like 'No Cap', 'POV', 'Bet', 'Level: Impossible'."
     },
     "focus": "Individual Agency (My choices matter) > Intellectual Superiority (I am smarter than the ad) > Instant Stress Relief",
-    "short_name": "NA"
+    "short_name": "NA",
+    "taboo": [
+        "General extreme violence or severe local offenses"
+    ],
+    "local_hook": "Local cultural meme/hook placeholder",
+    "language_nuance": "Standard localization tone"
 }

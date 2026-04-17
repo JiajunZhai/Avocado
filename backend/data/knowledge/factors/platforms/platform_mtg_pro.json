@@ -20,5 +20,8 @@
     ],
     "preferred_audio": "Tactile SFX (Clicking, popping, sliding) that provides haptic-like feedback. Background music should be looping and non-intrusive.",
     "focus": "IVR (Interactive View Rate) > CVR (Conversion Rate) > LTV (Long-term Value)",
-    "short_name": "mtg"
+    "short_name": "mtg",
+    "safety_zone": "Center screen, avoid bottom 20% overlay",
+    "attention_span": "First 3 seconds critical drop-off point",
+    "cta_style": "Direct and high urgency"
 }

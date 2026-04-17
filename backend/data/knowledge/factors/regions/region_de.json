@@ -15,5 +15,10 @@
     },
     "preferred_bgm": "Deep, atmospheric, or industrial soundtracks. Minimalist and non-distracting.",
     "focus": "System Depth > Authenticity > Fairness",
-    "short_name": "DE"
+    "short_name": "DE",
+    "taboo": [
+        "General extreme violence or severe local offenses"
+    ],
+    "local_hook": "Local cultural meme/hook placeholder",
+    "language_nuance": "Standard localization tone"
 }

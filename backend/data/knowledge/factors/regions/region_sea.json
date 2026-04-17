@@ -15,5 +15,10 @@
     },
     "preferred_bgm": "Trending local TikTok remixes or high-pitched, energetic dance music.",
     "focus": "Free Rewards (Gifts) > Social Interaction > Slapstick Fun",
-    "short_name": "SEA"
+    "short_name": "SEA",
+    "taboo": [
+        "General extreme violence or severe local offenses"
+    ],
+    "local_hook": "Local cultural meme/hook placeholder",
+    "language_nuance": "Standard localization tone"
 }

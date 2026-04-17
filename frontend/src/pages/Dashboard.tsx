@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Folder, Activity, Trash2, FolderPlus, Settings2, PlaySquare, Eye, RefreshCw, GitCompare, Filter } from 'lucide-react';
+import { Folder, Activity, Trash2, FolderPlus, Settings2, PlaySquare, Eye, RefreshCw, GitCompare, Filter, Trophy, ThumbsDown, Minus, Search, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useProjectContext } from '../context/ProjectContext';
 import { ProjectSetupModal } from '../components/ProjectSetupModal';
@@ -137,6 +137,77 @@ export const Dashboard: React.FC = () => {
   const [compareIds, setCompareIds] = React.useState<string[]>([]);
   const [compareOpen, setCompareOpen] = React.useState(false);
   const [isRefreshingCopy, setIsRefreshingCopy] = React.useState(false);
+  const [decisionBusyId, setDecisionBusyId] = React.useState<string>('');
+
+  // Phase 24 / C2 — History search & filters (persisted to localStorage).
+  type HistoryFilterState = {
+    q: string;
+    region: string;
+    platform: string;
+    angle: string;
+    decision: string;
+    dateFrom: string;
+    dateTo: string;
+    kind: string;
+  };
+  const FILTER_STORAGE_KEY = 'dashboard.history_filter.v1';
+  const loadFilters = (): HistoryFilterState => {
+    try {
+      const raw = localStorage.getItem(FILTER_STORAGE_KEY);
+      if (!raw) throw new Error('empty');
+      const parsed = JSON.parse(raw);
+      return {
+        q: String(parsed.q || ''),
+        region: String(parsed.region || ''),
+        platform: String(parsed.platform || ''),
+        angle: String(parsed.angle || ''),
+        decision: String(parsed.decision || ''),
+        dateFrom: String(parsed.dateFrom || ''),
+        dateTo: String(parsed.dateTo || ''),
+        kind: String(parsed.kind || ''),
+      };
+    } catch {
+      return { q: '', region: '', platform: '', angle: '', decision: '', dateFrom: '', dateTo: '', kind: '' };
+    }
+  };
+  const [historyFilter, setHistoryFilter] = React.useState<HistoryFilterState>(loadFilters);
+  const [filtersOpen, setFiltersOpen] = React.useState(false);
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(historyFilter));
+    } catch {
+      // localStorage may be unavailable (private mode); ignore.
+    }
+  }, [historyFilter]);
+
+  const resetHistoryFilter = () =>
+    setHistoryFilter({ q: '', region: '', platform: '', angle: '', decision: '', dateFrom: '', dateTo: '', kind: '' });
+
+  const activeFilterCount = React.useMemo(() => {
+    return ['q', 'region', 'platform', 'angle', 'decision', 'dateFrom', 'dateTo', 'kind'].reduce(
+      (n, k) => n + (historyFilter[k as keyof HistoryFilterState] ? 1 : 0),
+      0,
+    );
+  }, [historyFilter]);
+
+  const setDecision = async (scriptId: string, decision: 'winner' | 'loser' | 'neutral' | 'pending') => {
+    const pid = selectedProject?.id;
+    if (!pid || !scriptId) return;
+    setDecisionBusyId(scriptId);
+    try {
+      await axios.post(`${API_BASE}/api/history/decision`, {
+        project_id: pid,
+        script_id: scriptId,
+        decision,
+      });
+      await refreshProjects();
+    } catch (e) {
+      // best-effort; keep UI responsive even if the request fails
+      console.warn('decision update failed', e);
+    } finally {
+      setDecisionBusyId('');
+    }
+  };
 
   const handleEnterWorkspace = (proj: any) => {
      setCurrentProject(proj);
@@ -168,6 +239,88 @@ export const Dashboard: React.FC = () => {
     const h = selectedProject?.history_log;
     return Array.isArray(h) ? [...h].sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) : [];
   }, [selectedProject]);
+
+  const historyFilterOptions = React.useMemo(() => {
+    const regions = new Set<string>();
+    const platforms = new Set<string>();
+    const angles = new Set<string>();
+    const kinds = new Set<string>();
+    projectHistory.forEach((log: any) => {
+      const reg = log?.request?.region_id || log?.region_id || (Array.isArray(log?.request?.region_ids) ? log.request.region_ids.join('|') : '');
+      if (reg) regions.add(String(reg));
+      const plat = log?.request?.platform_id || log?.platform_id;
+      if (plat) platforms.add(String(plat));
+      const ang = log?.request?.angle_id || log?.angle_id;
+      if (ang) angles.add(String(ang));
+      const kind = log?.output_kind;
+      if (kind) kinds.add(String(kind));
+    });
+    return {
+      regions: [...regions].sort(),
+      platforms: [...platforms].sort(),
+      angles: [...angles].sort(),
+      kinds: [...kinds].sort(),
+    };
+  }, [projectHistory]);
+
+  const filteredHistory = React.useMemo(() => {
+    const q = historyFilter.q.trim().toLowerCase();
+    const toMs = (s: string) => {
+      if (!s) return NaN;
+      const d = new Date(s);
+      return isNaN(d.getTime()) ? NaN : d.getTime();
+    };
+    const fromMs = toMs(historyFilter.dateFrom);
+    const toMsVal = (() => {
+      const v = toMs(historyFilter.dateTo);
+      return isNaN(v) ? NaN : v + 24 * 3600 * 1000 - 1;
+    })();
+    return projectHistory.filter((log: any) => {
+      if (historyFilter.region) {
+        const reg =
+          log?.request?.region_id ||
+          log?.region_id ||
+          (Array.isArray(log?.request?.region_ids) ? log.request.region_ids.join('|') : '');
+        if (String(reg || '') !== historyFilter.region) return false;
+      }
+      if (historyFilter.platform) {
+        const plat = log?.request?.platform_id || log?.platform_id;
+        if (String(plat || '') !== historyFilter.platform) return false;
+      }
+      if (historyFilter.angle) {
+        const ang = log?.request?.angle_id || log?.angle_id;
+        if (String(ang || '') !== historyFilter.angle) return false;
+      }
+      if (historyFilter.kind) {
+        if (String(log?.output_kind || '') !== historyFilter.kind) return false;
+      }
+      if (historyFilter.decision) {
+        const dec = String(log?.decision || 'pending').toLowerCase();
+        if (dec !== historyFilter.decision) return false;
+      }
+      const ts = new Date(log?.timestamp || 0).getTime();
+      if (!isNaN(fromMs) && ts < fromMs) return false;
+      if (!isNaN(toMsVal) && ts > toMsVal) return false;
+      if (q) {
+        const haystack = [
+          log?.id,
+          log?.output_kind,
+          log?.lang,
+          log?.output_mode,
+          log?.request?.region_id,
+          log?.request?.platform_id,
+          log?.request?.angle_id,
+          log?.parent_script_id,
+          ...(Array.isArray(log?.compliance?.hits) ? log.compliance.hits.map((h: any) => h?.term) : []),
+        ]
+          .filter(Boolean)
+          .map((x: any) => String(x).toLowerCase())
+          .join(' ');
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [projectHistory, historyFilter]);
 
   const activeRecord = React.useMemo(() => {
     if (!activeRecordId) return null;
@@ -287,9 +440,12 @@ export const Dashboard: React.FC = () => {
            <div className="w-full lg:w-72 xl:w-80 shrink-0 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2 pb-4" style={{ scrollbarGutter: 'stable' }}>
               
               <div className="bg-surface-container border border-outline-variant/30 rounded-xl p-5 flex flex-col min-h-0 flex-1 shadow-sm">
-                 <div className="flex items-center justify-between gap-3 mb-4 border-b border-outline-variant/20 pb-3">
+                 <div className="flex items-center justify-between gap-3 mb-3 border-b border-outline-variant/20 pb-3">
                    <h3 className="text-[10px] font-bold text-on-surface uppercase tracking-widest flex items-center gap-2">
                      <Activity className="w-4 h-4 text-primary" /> {t('dashboard.history.title')}
+                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-outline-variant/40 text-on-surface-variant">
+                       {filteredHistory.length}/{projectHistory.length}
+                     </span>
                    </h3>
                    <div className="flex items-center gap-2">
                      <Filter className="w-4 h-4 text-on-surface-variant" />
@@ -308,7 +464,118 @@ export const Dashboard: React.FC = () => {
                      </select>
                    </div>
                  </div>
-                 
+
+                 <div className="mb-2">
+                   <div className="flex items-center gap-2">
+                     <div className="flex items-center gap-1.5 flex-1 rounded-lg border border-outline-variant/40 bg-surface-container-high px-2 py-1 text-[11px]">
+                       <Search className="w-3.5 h-3.5 text-on-surface-variant" />
+                       <input
+                         type="text"
+                         value={historyFilter.q}
+                         onChange={(e) => setHistoryFilter((s) => ({ ...s, q: e.target.value }))}
+                         placeholder={t('dashboard.history.search_placeholder') as string}
+                         className="bg-transparent outline-none flex-1 min-w-0 text-on-surface placeholder:text-on-surface-variant"
+                       />
+                       {historyFilter.q && (
+                         <button
+                           type="button"
+                           onClick={() => setHistoryFilter((s) => ({ ...s, q: '' }))}
+                           className="text-on-surface-variant hover:text-on-surface"
+                         >
+                           <X className="w-3 h-3" />
+                         </button>
+                       )}
+                     </div>
+                     <button
+                       type="button"
+                       onClick={() => setFiltersOpen((v) => !v)}
+                       className={`text-[10px] font-bold rounded-lg border px-2 py-1 flex items-center gap-1.5 transition-colors ${
+                         activeFilterCount > 0
+                           ? 'border-primary/50 text-primary bg-primary/10'
+                           : 'border-outline-variant/40 text-on-surface-variant hover:text-on-surface'
+                       }`}
+                       title={t('dashboard.history.toggle_filters') as string}
+                     >
+                       <Filter className="w-3 h-3" /> {activeFilterCount > 0 ? activeFilterCount : t('dashboard.history.filters')}
+                     </button>
+                   </div>
+                   {filtersOpen && (
+                     <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg border border-outline-variant/30 bg-surface-container-high/40 p-2">
+                       <select
+                         value={historyFilter.region}
+                         onChange={(e) => setHistoryFilter((s) => ({ ...s, region: e.target.value }))}
+                         className="bg-surface-container-high border border-outline-variant/30 rounded px-1.5 py-1 text-[10px] text-on-surface-variant"
+                       >
+                         <option value="">{t('dashboard.history.all_regions')}</option>
+                         {historyFilterOptions.regions.map((r) => (
+                           <option key={r} value={r}>{r}</option>
+                         ))}
+                       </select>
+                       <select
+                         value={historyFilter.platform}
+                         onChange={(e) => setHistoryFilter((s) => ({ ...s, platform: e.target.value }))}
+                         className="bg-surface-container-high border border-outline-variant/30 rounded px-1.5 py-1 text-[10px] text-on-surface-variant"
+                       >
+                         <option value="">{t('dashboard.history.all_platforms')}</option>
+                         {historyFilterOptions.platforms.map((p) => (
+                           <option key={p} value={p}>{p}</option>
+                         ))}
+                       </select>
+                       <select
+                         value={historyFilter.angle}
+                         onChange={(e) => setHistoryFilter((s) => ({ ...s, angle: e.target.value }))}
+                         className="bg-surface-container-high border border-outline-variant/30 rounded px-1.5 py-1 text-[10px] text-on-surface-variant"
+                       >
+                         <option value="">{t('dashboard.history.all_angles')}</option>
+                         {historyFilterOptions.angles.map((a) => (
+                           <option key={a} value={a}>{a}</option>
+                         ))}
+                       </select>
+                       <select
+                         value={historyFilter.kind}
+                         onChange={(e) => setHistoryFilter((s) => ({ ...s, kind: e.target.value }))}
+                         className="bg-surface-container-high border border-outline-variant/30 rounded px-1.5 py-1 text-[10px] text-on-surface-variant"
+                       >
+                         <option value="">{t('dashboard.history.all_kinds')}</option>
+                         {historyFilterOptions.kinds.map((k) => (
+                           <option key={k} value={k}>{k.toUpperCase()}</option>
+                         ))}
+                       </select>
+                       <select
+                         value={historyFilter.decision}
+                         onChange={(e) => setHistoryFilter((s) => ({ ...s, decision: e.target.value }))}
+                         className="bg-surface-container-high border border-outline-variant/30 rounded px-1.5 py-1 text-[10px] text-on-surface-variant col-span-2"
+                       >
+                         <option value="">{t('dashboard.history.all_decisions')}</option>
+                         <option value="winner">{t('dashboard.history.decision_winner')}</option>
+                         <option value="loser">{t('dashboard.history.decision_loser')}</option>
+                         <option value="neutral">{t('dashboard.history.decision_neutral')}</option>
+                         <option value="pending">{t('dashboard.history.decision_pending')}</option>
+                       </select>
+                       <input
+                         type="date"
+                         value={historyFilter.dateFrom}
+                         onChange={(e) => setHistoryFilter((s) => ({ ...s, dateFrom: e.target.value }))}
+                         className="bg-surface-container-high border border-outline-variant/30 rounded px-1.5 py-1 text-[10px] text-on-surface-variant"
+                       />
+                       <input
+                         type="date"
+                         value={historyFilter.dateTo}
+                         onChange={(e) => setHistoryFilter((s) => ({ ...s, dateTo: e.target.value }))}
+                         className="bg-surface-container-high border border-outline-variant/30 rounded px-1.5 py-1 text-[10px] text-on-surface-variant"
+                       />
+                       <button
+                         type="button"
+                         onClick={resetHistoryFilter}
+                         disabled={activeFilterCount === 0}
+                         className="col-span-2 text-[10px] font-bold text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-1.5 py-1 rounded border border-outline-variant/30 disabled:opacity-50"
+                       >
+                         <X className="w-3 h-3" /> {t('dashboard.history.reset_filters')}
+                       </button>
+                     </div>
+                   )}
+                 </div>
+
                  <div className="space-y-0 overflow-y-auto custom-scrollbar pr-1 flex-1" style={{ scrollbarGutter: 'stable' }}>
                    {compareIds.length === 2 && (
                      <div className="sticky top-0 z-[2] pb-2">
@@ -331,64 +598,159 @@ export const Dashboard: React.FC = () => {
                          <Folder className="w-8 h-8 opacity-30" />
                          {t('dashboard.history.empty')}
                       </div>
+                   ) : filteredHistory.length === 0 ? (
+                      <div className="text-xs text-on-surface-variant opacity-70 text-center py-10 flex flex-col items-center gap-2">
+                         <Search className="w-8 h-8 opacity-30" />
+                         {t('dashboard.history.filtered_empty')}
+                         <button
+                           type="button"
+                           onClick={resetHistoryFilter}
+                           className="text-[10px] font-bold text-primary hover:underline mt-1"
+                         >
+                           {t('dashboard.history.reset_filters')}
+                         </button>
+                      </div>
                    ) : (
-                      projectHistory.map((log: any, idx: number) => {
-                        const id = String(log?.id || idx);
-                        const kind = String(log?.output_kind || '').toUpperCase();
-                        const rl = String(log?.compliance?.risk_level || 'ok').toUpperCase();
-                        const isSelected = activeRecordId === id;
-                        const isCompare = compareIds.includes(id);
-                        return (
-                          <div key={id} className={`rounded-xl border p-3 mb-2 transition-colors ${isSelected ? 'border-primary/40 bg-primary/5' : 'border-outline-variant/20 bg-surface-container-lowest/40 hover:bg-surface-container-low/40'}`}>
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-black tracking-widest text-on-surface-variant uppercase">{kind || 'SOP'}</span>
-                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                                    rl === 'BLOCK' ? 'bg-red-50 text-red-700 border-red-200' : rl === 'WARN' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  }`}>{rl}</span>
-                                </div>
-                                <div className="text-[11px] font-black text-on-surface truncate mt-1">{String(log?.id || '')}</div>
-                                <div className="text-[10px] text-on-surface-variant font-mono mt-1">
-                                  {String(log?.recipe?.region || '-')} · {String(log?.recipe?.platform || '-')} · {String(log?.recipe?.angle || '-')}
-                                </div>
-                              </div>
-                              <div className="text-[9px] font-mono text-on-surface-variant/70 shrink-0">{timeAgo(String(log?.timestamp || ''))}</div>
-                            </div>
-                            <div className="flex items-center justify-between gap-2 mt-3">
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setActiveRecordId(id)}
-                                  className="text-[10px] font-bold text-on-surface-variant hover:text-on-surface flex items-center gap-1.5"
-                                  title="Open"
-                                >
-                                  <Eye className="w-4 h-4" /> {t('dashboard.history.open')}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => toggleCompare(id)}
-                                  className={`text-[10px] font-bold flex items-center gap-1.5 ${isCompare ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
-                                  title="Compare"
-                                >
-                                  <GitCompare className="w-4 h-4" /> {isCompare ? t('dashboard.history.picked') : t('dashboard.history.compare')}
-                                </button>
-                              </div>
-                              {String(log?.output_kind || '') === 'sop' && (
-                                <button
-                                  type="button"
-                                  onClick={() => runRefreshCopy(String(log?.id || ''))}
-                                  disabled={isRefreshingCopy}
-                                  className={`text-[10px] font-bold text-secondary flex items-center gap-1.5 ${isRefreshingCopy ? 'opacity-60 cursor-wait' : 'hover:text-secondary/80'}`}
-                                  title="Refresh Copy"
-                                >
-                                  <RefreshCw className={`w-4 h-4 ${isRefreshingCopy ? 'animate-spin' : ''}`} /> {t('dashboard.history.refresh')}
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })
+                     filteredHistory.map((log: any, idx: number) => {
+                       const id = String(log?.id || idx);
+                       const kind = String(log?.output_kind || '').toUpperCase();
+                       const rl = String(log?.compliance?.risk_level || 'ok').toUpperCase();
+                       const lang = String(log?.lang || log?.output_mode || '').toUpperCase();
+                       const parentId = String(log?.parent_script_id || '');
+                       const draftStatus = String(log?.draft_status || '');
+                       // Phase 25 / D3 — show which LLM provider + model produced
+                       // this entry. Pre-D2 entries don't carry this metadata.
+                       const providerId = String(log?.provider || '');
+                       const modelId = String(log?.model || '');
+                       const decision = String(log?.decision || 'pending').toLowerCase();
+                       const isSelected = activeRecordId === id;
+                       const isCompare = compareIds.includes(id);
+                       const isBusy = decisionBusyId === id;
+                       const decisionStyle = (() => {
+                         if (decision === 'winner') return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30';
+                         if (decision === 'loser') return 'bg-red-500/10 text-red-600 border-red-500/30';
+                         if (decision === 'neutral') return 'bg-zinc-500/10 text-zinc-600 border-zinc-500/30';
+                         return '';
+                       })();
+                       return (
+                         <div key={id} className={`rounded-xl border p-3 mb-2 transition-colors ${isSelected ? 'border-primary/40 bg-primary/5' : 'border-outline-variant/20 bg-surface-container-lowest/40 hover:bg-surface-container-low/40'}`}>
+                           <div className="flex items-start justify-between gap-2">
+                             <div className="min-w-0">
+                               <div className="flex items-center gap-2 flex-wrap">
+                                 <span className="text-[10px] font-black tracking-widest text-on-surface-variant uppercase">{kind || 'SOP'}</span>
+                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                   rl === 'BLOCK' ? 'bg-red-50 text-red-700 border-red-200' : rl === 'WARN' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                 }`}>{rl}</span>
+                                {lang && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant/80 border border-outline-variant/30">{lang}</span>
+                                )}
+                                {providerId && (
+                                  <span
+                                    className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30 font-mono"
+                                    title={modelId ? `${providerId} · ${modelId}` : providerId}
+                                  >
+                                    {providerId}{modelId ? ` · ${modelId}` : ''}
+                                  </span>
+                                )}
+                                 {draftStatus === 'fallback' && (
+                                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200" title={t('dashboard.history.draft_fallback') as string}>
+                                     {t('dashboard.history.draft_fallback')}
+                                   </span>
+                                 )}
+                                 {decision !== 'pending' && decisionStyle && (
+                                   <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full border ${decisionStyle}`}>
+                                     {t(`dashboard.history.decision_${decision}`)}
+                                   </span>
+                                 )}
+                               </div>
+                               <div className="text-[11px] font-black text-on-surface truncate mt-1">{String(log?.id || '')}</div>
+                               <div className="text-[10px] text-on-surface-variant font-mono mt-1">
+                                 {String(log?.recipe?.region || '-')} · {String(log?.recipe?.platform || '-')} · {String(log?.recipe?.angle || '-')}
+                               </div>
+                               {parentId && (
+                                 <div className="text-[9px] text-on-surface-variant/70 font-mono mt-1">
+                                   {t('dashboard.history.parent_of')} <span className="text-primary/80">{parentId}</span>
+                                 </div>
+                               )}
+                             </div>
+                             <div className="text-[9px] font-mono text-on-surface-variant/70 shrink-0">{timeAgo(String(log?.timestamp || ''))}</div>
+                           </div>
+                           <div className="flex items-center justify-between gap-2 mt-3">
+                             <div className="flex items-center gap-2">
+                               <button
+                                 type="button"
+                                 onClick={() => setActiveRecordId(id)}
+                                 className="text-[10px] font-bold text-on-surface-variant hover:text-on-surface flex items-center gap-1.5"
+                                 title="Open"
+                               >
+                                 <Eye className="w-4 h-4" /> {t('dashboard.history.open')}
+                               </button>
+                               <button
+                                 type="button"
+                                 onClick={() => toggleCompare(id)}
+                                 className={`text-[10px] font-bold flex items-center gap-1.5 ${isCompare ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+                                 title="Compare"
+                               >
+                                 <GitCompare className="w-4 h-4" /> {isCompare ? t('dashboard.history.picked') : t('dashboard.history.compare')}
+                               </button>
+                             </div>
+                             {String(log?.output_kind || '') === 'sop' && (
+                               <button
+                                 type="button"
+                                 onClick={() => runRefreshCopy(String(log?.id || ''))}
+                                 disabled={isRefreshingCopy}
+                                 className={`text-[10px] font-bold text-secondary flex items-center gap-1.5 ${isRefreshingCopy ? 'opacity-60 cursor-wait' : 'hover:text-secondary/80'}`}
+                                 title="Refresh Copy"
+                               >
+                                 <RefreshCw className={`w-4 h-4 ${isRefreshingCopy ? 'animate-spin' : ''}`} /> {t('dashboard.history.refresh')}
+                               </button>
+                             )}
+                           </div>
+                           <div className="flex items-center gap-1 mt-2 pt-2 border-t border-outline-variant/15">
+                             <span className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant/70 mr-1">{t('dashboard.history.decision_title')}:</span>
+                             <button
+                               type="button"
+                               disabled={isBusy}
+                               onClick={() => setDecision(id, decision === 'winner' ? 'pending' : 'winner')}
+                               className={`text-[9px] font-bold flex items-center gap-1 px-1.5 py-0.5 rounded-md border transition-colors ${
+                                 decision === 'winner'
+                                   ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/40'
+                                   : 'border-outline-variant/30 text-on-surface-variant hover:text-emerald-600 hover:border-emerald-500/40'
+                               } ${isBusy ? 'opacity-60 cursor-wait' : ''}`}
+                               title={t('dashboard.history.mark_winner') as string}
+                             >
+                               <Trophy className="w-3 h-3" /> {t('dashboard.history.decision_winner')}
+                             </button>
+                             <button
+                               type="button"
+                               disabled={isBusy}
+                               onClick={() => setDecision(id, decision === 'loser' ? 'pending' : 'loser')}
+                               className={`text-[9px] font-bold flex items-center gap-1 px-1.5 py-0.5 rounded-md border transition-colors ${
+                                 decision === 'loser'
+                                   ? 'bg-red-500/15 text-red-600 border-red-500/40'
+                                   : 'border-outline-variant/30 text-on-surface-variant hover:text-red-600 hover:border-red-500/40'
+                               } ${isBusy ? 'opacity-60 cursor-wait' : ''}`}
+                               title={t('dashboard.history.mark_loser') as string}
+                             >
+                               <ThumbsDown className="w-3 h-3" /> {t('dashboard.history.decision_loser')}
+                             </button>
+                             <button
+                               type="button"
+                               disabled={isBusy}
+                               onClick={() => setDecision(id, decision === 'neutral' ? 'pending' : 'neutral')}
+                               className={`text-[9px] font-bold flex items-center gap-1 px-1.5 py-0.5 rounded-md border transition-colors ${
+                                 decision === 'neutral'
+                                   ? 'bg-zinc-500/15 text-zinc-600 border-zinc-500/40'
+                                   : 'border-outline-variant/30 text-on-surface-variant hover:text-zinc-600 hover:border-zinc-500/40'
+                               } ${isBusy ? 'opacity-60 cursor-wait' : ''}`}
+                               title={t('dashboard.history.mark_neutral') as string}
+                             >
+                               <Minus className="w-3 h-3" /> {t('dashboard.history.decision_neutral')}
+                             </button>
+                           </div>
+                         </div>
+                       );
+                     })
                    )}
                  </div>
               </div>

@@ -23,5 +23,8 @@
     "cta_logic": {
         "native_cta": "Avoid 'Download Now'. Use 'Join the 1% challenge', 'Check your Strategy IQ', or 'Claim before nerf' with a pulsing downward finger emoji."
     },
-    "short_name": "TikTok"
+    "short_name": "TikTok",
+    "safety_zone": "Center screen, avoid bottom 20% overlay",
+    "attention_span": "First 3 seconds critical drop-off point",
+    "cta_style": "Direct and high urgency"
 }

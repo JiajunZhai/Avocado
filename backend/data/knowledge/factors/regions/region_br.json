@@ -15,5 +15,10 @@
     },
     "preferred_bgm": "Funk Carioca (for casual) or heavy Nu-Metal/Electronic (for hardcore).",
     "focus": "Action & Impact > Social Ego > Emotional Resonance",
-    "short_name": "BR"
+    "short_name": "BR",
+    "taboo": [
+        "General extreme violence or severe local offenses"
+    ],
+    "local_hook": "Local cultural meme/hook placeholder",
+    "language_nuance": "Standard localization tone"
 }

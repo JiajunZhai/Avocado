@@ -184,7 +184,7 @@ cd backend && pytest tests -q && cd ../frontend && npm run verify:full
 |------|------|
 | `webServer` 端口占用 | 关闭已有 `8000`/`5173` 进程，或设 `CI=1` 强制不复用 |
 | 抓取超时 | 提高 `解析完成` 的 `timeout`，或检查本机访问 Google |
-| `/api/generate` 非 200（local） | E2E 中保持 **DeepSeek** 按钮选中（cloud），或修好 Ollama |
+| `/api/generate` 非 200（502） | 检查 `DEEPSEEK_API_KEY`、`DEEPSEEK_BASE_URL` 可达；响应 `detail.error_code`（`CLOUD_UNAVAILABLE` / `CLOUD_SYNTHESIS_FAILED` / `DRAFT_UNAVAILABLE`）定位原因 |
 | 选择器找不到 | 确认已添加 `data-testid` |
 
 ---

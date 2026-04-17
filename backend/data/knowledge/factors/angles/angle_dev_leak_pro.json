@@ -15,5 +15,12 @@
         "The 'Hacker' Thrill"
     ],
     "kpi_focus": "Extreme high CTR on TikTok/BIGO. Effective for mid-core RPG/Card games.",
-    "short_name": "DevLeak"
+    "short_name": "DevLeak",
+    "priority_weight": 1.0,
+    "script_logic": {
+        "hook": "UGC Persona: Start with a 'low-quality' selfie video or a screen recording from a 'leaked' developer build.",
+        "build_up": "The Code Entry: Show a hand typing a code like 'ADMIN999' or 'DEVFREE' into a hidden console/settings menu.",
+        "climax": "The Reward Surge: A massive, non-standard system notification shows '99999 Gems added'. The UI should look slightly 'glitched' or 'raw'.",
+        "cta": "The Scarcity CTA: 'Download via this private link before the devs fix it!' (Use countdown timer)."
+    }
 }

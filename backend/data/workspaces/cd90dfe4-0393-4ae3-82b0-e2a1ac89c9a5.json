@@ -7,7 +7,352 @@
     "value_hooks": "Core Systems Design\n\nCombat System: Players are positioned at the bottom of the screen, while the BOSS descends from above.\n\nHit Points: Each segment of the Divine Worm is an independent target, with its own health and damage.\n\nSkills & Progression:\nBasic Weapons: Bow and Arrow (single target, ricochet), Throwing Knife (poison), Throwing Sword (penetrating, high damage).\n\nAdvanced/Ultimate Skills:\nVoid Sword: Summons a giant flying sword that traverses the screen, slicing across a large area.\n\nLotus Field: Creates a rotating lotus in the center of the screen, dealing continuous multi-hit damage to any segments it touches.\n\nAttribute Buffs: Damage bonus, attack speed bonus, suction range.\n\nLevel & Enemies:\nMonster Form: Snake form. Its length increases with level, moving in an S-shape and spiral, creating a sense of encirclement and pressure for the player.\n\nMechanism: Some sections have special markers (such as treasure chests or shields), and breaking them will trigger special rewards."
   },
   "market_targets": [],
-  "history_log": [],
+  "history_log": [
+    {
+      "id": "SOP-008649",
+      "timestamp": "2026-04-17T02:12:07.463178Z",
+      "engine": "mock",
+      "recipe": {
+        "region": "region_jp_advanced",
+        "platform": "platform_tiktok_advanced",
+        "angle": "angle_progression_pro"
+      },
+      "output_kind": "sop",
+      "output_mode": "cn",
+      "markdown_path": "@OUT/cd90dfe4-0393-4ae3-82b0-e2a1ac89c9a5/CN_Don_t_Let_It_JP_TikTok_Progress_SOP-008649.md",
+      "generation_metrics": {
+        "mode": "auto",
+        "elapsed_ms": 194385,
+        "rag_rules_used": 5
+      },
+      "compliance": {
+        "risk_level": "ok",
+        "hits": []
+      },
+      "ad_copy_matrix": {
+        "primary_texts": [
+          "[拯救] 他/她只差一步就被毁掉…你能在 3 秒内救回来吗？立刻进 TikTok (Community & Attention Arbitrage) 爆款玩法：点一下，逆转结局。",
+          "[智商] 你以为这是随机？其实是策略题。Japan 热门解法：看穿陷阱 → 一步翻盘 → 爽感爆表。",
+          "[ASMR] 听这一声“咔哒”就上瘾。慢一点、爽一点：刮开、解压、连击反馈，每一帧都舒服。",
+          "[福利] 新手福利拉满：开局送资源，连抽不断，轻松追上老玩家。今天就把奖励拿走。",
+          "[简洁] 3 秒看懂，1 分钟上头。真实玩法，不演。"
+        ],
+        "headlines": [
+          "Level 1 vs Level 99 😱",
+          "Huge Win in 3s 🏆",
+          "Scared? Watch this 😳",
+          "One Tap Comeback 🔥",
+          "Stop Doing This ❌",
+          "Only 1% Can Solve 🧠",
+          "So Satisfying... 😌",
+          "Free Rewards Today 🎁",
+          "Fail? Try Again ✅",
+          "Real Gameplay, No Cap 🎮"
+        ],
+        "hashtags": [
+          "#mobilegame",
+          "#gaming",
+          "#ad",
+          "#ua",
+          "#fyp",
+          "#viral",
+          "#tiktokads",
+          "#reels",
+          "#shorts",
+          "#gameplay",
+          "#strategy",
+          "#puzzle",
+          "#satisfying",
+          "#asmr",
+          "#reward",
+          "#free",
+          "#levelup",
+          "#challenge",
+          "#comedy",
+          "#fail"
+        ],
+        "visual_stickers": [
+          {
+            "shot_index": 0,
+            "sticker_text": "LEVEL | Local text",
+            "sticker_meaning_cn": "提示文案"
+          }
+        ]
+      },
+      "ad_copy_tiles": [
+        {
+          "id": "region_jp_advanced:default:headline:0",
+          "locale": "default",
+          "kind": "headline",
+          "text": "Level 1 vs Level 99 😱",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:headline:1",
+          "locale": "default",
+          "kind": "headline",
+          "text": "Huge Win in 3s 🏆",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:headline:2",
+          "locale": "default",
+          "kind": "headline",
+          "text": "Scared? Watch this 😳",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:headline:3",
+          "locale": "default",
+          "kind": "headline",
+          "text": "One Tap Comeback 🔥",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:headline:4",
+          "locale": "default",
+          "kind": "headline",
+          "text": "Stop Doing This ❌",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:headline:5",
+          "locale": "default",
+          "kind": "headline",
+          "text": "Only 1% Can Solve 🧠",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:headline:6",
+          "locale": "default",
+          "kind": "headline",
+          "text": "So Satisfying... 😌",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:headline:7",
+          "locale": "default",
+          "kind": "headline",
+          "text": "Free Rewards Today 🎁",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:headline:8",
+          "locale": "default",
+          "kind": "headline",
+          "text": "Fail? Try Again ✅",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:headline:9",
+          "locale": "default",
+          "kind": "headline",
+          "text": "Real Gameplay, No Cap 🎮",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:primary_text:10",
+          "locale": "default",
+          "kind": "primary_text",
+          "text": "[拯救] 他/她只差一步就被毁掉…你能在 3 秒内救回来吗？立刻进 TikTok (Community & Attention Arbitrage) 爆款玩法：点一下，逆转结局。",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:primary_text:11",
+          "locale": "default",
+          "kind": "primary_text",
+          "text": "[智商] 你以为这是随机？其实是策略题。Japan 热门解法：看穿陷阱 → 一步翻盘 → 爽感爆表。",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:primary_text:12",
+          "locale": "default",
+          "kind": "primary_text",
+          "text": "[ASMR] 听这一声“咔哒”就上瘾。慢一点、爽一点：刮开、解压、连击反馈，每一帧都舒服。",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:primary_text:13",
+          "locale": "default",
+          "kind": "primary_text",
+          "text": "[福利] 新手福利拉满：开局送资源，连抽不断，轻松追上老玩家。今天就把奖励拿走。",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:primary_text:14",
+          "locale": "default",
+          "kind": "primary_text",
+          "text": "[简洁] 3 秒看懂，1 分钟上头。真实玩法，不演。",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:15",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#mobilegame",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:16",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#gaming",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:17",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#ad",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:18",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#ua",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:19",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#fyp",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:20",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#viral",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:21",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#tiktokads",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:22",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#reels",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:23",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#shorts",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:24",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#gameplay",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:25",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#strategy",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:26",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#puzzle",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:27",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#satisfying",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:28",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#asmr",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:29",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#reward",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:30",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#free",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:31",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#levelup",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:32",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#challenge",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:33",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#comedy",
+          "region_id": "region_jp_advanced"
+        },
+        {
+          "id": "region_jp_advanced:default:hashtag:34",
+          "locale": "default",
+          "kind": "hashtag",
+          "text": "#fail",
+          "region_id": "region_jp_advanced"
+        }
+      ],
+      "script": [
+        {
+          "time": "0s",
+          "visual": "The Humiliation (0-3s): Must show a social or physical defeat. Character is not just 'Level 1', but 'Homeless', 'Betrayed', or 'Bullied' by a high-level antagonist. This creates instant empathy.",
+          "visual_meaning": "中文画面说明：突出核心玩法动作与结果反馈，避免仿系统原生 UI 误导。",
+          "audio_content": "Native Voiceover (Simulated)",
+          "audio_meaning": "哦不！（语气：夸张但不刺耳；节奏：短促）",
+          "text_content": "Local text",
+          "text_meaning": "提示文案",
+          "direction_note": "导演提示：前 2 秒快节奏钩子，随后切入真实玩法并放慢镜头展示反馈。",
+          "sfx_transition_note": "后期提示：失误点后插入 0.15-0.25 秒静音真空，再进 ASMR 或主 BGM。",
+          "sticker_text": "Local text",
+          "sticker_meaning": "提示文案"
+        }
+      ],
+      "schema_version": 2,
+      "lang": "cn",
+      "parent_script_id": null,
+      "factor_version": "4c23ddb57641",
+      "rag_rule_ids": [
+        "https://sensortower.com/zh-CN/blog/top-10-worldwide-mobile-games-by-revenue-and-downloads-in-march-2026-CN"
+      ],
+      "draft_status": "ok",
+      "decision": "pending",
+      "decision_at": null
+    }
+  ],
   "id": "cd90dfe4-0393-4ae3-82b0-e2a1ac89c9a5",
   "created_at": "2026-04-16T09:12:28.924999Z",
   "updated_at": "2026-04-16T09:12:36.763420Z"

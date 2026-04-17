@@ -18,5 +18,8 @@
         "The 'News' Angle: Presenting the game update as a 'Breaking News' flash."
     ],
     "focus": "Visual Quality (IP/Art) > Social Viral potential",
-    "short_name": "X"
+    "short_name": "X",
+    "safety_zone": "Center screen, avoid bottom 20% overlay",
+    "attention_span": "First 3 seconds critical drop-off point",
+    "cta_style": "Direct and high urgency"
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Copy, Download, FileText, FolderOpen, X } from 'lucide-react';
+import { AlertTriangle, Copy, Download, FileText, FolderOpen, LayoutGrid, Package, RefreshCw, Search, Table2, X } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
@@ -38,20 +38,58 @@ export function ResultDashboardView({
   open,
   onClose,
   result,
+  onResultUpdate,
 }: {
   open: boolean;
   onClose: () => void;
   result: AnyObj | null;
+  onResultUpdate?: (next: AnyObj) => void;
 }) {
   const { t } = useTranslation();
   const [markdownText, setMarkdownText] = useState('');
   const [isMarkdownLoading, setIsMarkdownLoading] = useState(false);
   const [isPackaging, setIsPackaging] = useState(false);
   const [complianceOpen, setComplianceOpen] = useState(false);
+  // B4 — tracks which region is currently retrying.
+  const [retryingRegion, setRetryingRegion] = useState<string | null>(null);
+  // C1 — Localization Matrix view
+  const [copyView, setCopyView] = useState<'cards' | 'matrix'>('cards');
+  const [matrixKind, setMatrixKind] = useState<'headline' | 'primary_text' | 'hashtag'>('headline');
+  const [matrixSearch, setMatrixSearch] = useState('');
 
   const compliance = result?.compliance as AnyObj | undefined;
   const complianceHits = useMemo(() => (Array.isArray(compliance?.hits) ? compliance?.hits : []), [compliance]);
   const complianceSuggestions = useMemo(() => (Array.isArray(compliance?.suggestions) ? compliance?.suggestions : []), [compliance]);
+
+  // B4 — partial failure detection
+  const regionStatuses: Record<string, string> = useMemo(() => {
+    const acm = result?.ad_copy_matrix as AnyObj | undefined;
+    return (acm?.regions_status as Record<string, string>) || {};
+  }, [result]);
+  const regionErrors: Record<string, string> = useMemo(() => {
+    const acm = result?.ad_copy_matrix as AnyObj | undefined;
+    return (acm?.regions_error as Record<string, string>) || {};
+  }, [result]);
+  const partialFailure = Boolean(result?.partial_failure) || Object.values(regionStatuses).some((s) => s && s !== 'ok');
+
+  async function retryRegion(regionId: string) {
+    if (!result?.project_id || !result?.script_id) return;
+    setRetryingRegion(regionId);
+    try {
+      const resp = await axios.post(`${API_BASE}/api/quick-copy/retry-region`, {
+        project_id: result.project_id,
+        script_id: result.script_id,
+        region_id: regionId,
+      });
+      if (onResultUpdate && resp?.data) {
+        onResultUpdate(resp.data);
+      }
+    } catch (err) {
+      console.error('retry-region failed', err);
+    } finally {
+      setRetryingRegion(null);
+    }
+  }
 
   const adCopyTiles = useMemo(() => {
     const tiles = result?.ad_copy_tiles;
@@ -147,6 +185,33 @@ export function ResultDashboardView({
     }
   };
 
+  const exportDeliveryPack = async () => {
+    if (!result) return;
+    setIsPackaging(true);
+    try {
+      const resp = await axios.post(`${API_BASE}/api/export/delivery-pack`, {
+        data: result,
+        markdown_path: result?.markdown_path,
+        project_name: result?.project_id,
+      });
+      const b64 = String(resp.data?.zip_base64 || '');
+      const filename = String(resp.data?.filename || `${String(result?.script_id || 'delivery')}.zip`);
+      if (!b64) return;
+      const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: 'application/zip' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsPackaging(false);
+    }
+  };
+
   const exportXlsx = () => {
     const acm = result?.ad_copy_matrix;
     if (!acm || typeof acm !== 'object') return;
@@ -170,6 +235,75 @@ export function ResultDashboardView({
     });
     const name = `${String(result?.script_id || 'copy_matrix')}.xlsx`;
     XLSX.writeFile(wb, name);
+  };
+
+  // C1 — Matrix data (locale ↔ slot) for the current kind, derived from ad_copy_matrix.variants
+  const matrixLocales: string[] = useMemo(() => {
+    const acm = result?.ad_copy_matrix as AnyObj | undefined;
+    if (!acm) return [];
+    const locs = Array.isArray((acm as any).locales) ? (acm as any).locales : null;
+    if (locs && locs.length) return locs.map((x: any) => String(x));
+    const def = (acm as any)?.default_locale;
+    return def ? [String(def)] : [];
+  }, [result]);
+
+  const matrixKindKey: 'headlines' | 'primary_texts' | 'hashtags' =
+    matrixKind === 'headline' ? 'headlines' : matrixKind === 'primary_text' ? 'primary_texts' : 'hashtags';
+
+  const matrixRows = useMemo(() => {
+    const acm = result?.ad_copy_matrix as AnyObj | undefined;
+    if (!acm || !matrixLocales.length) return [] as Array<{ idx: number; cells: Record<string, string> }>;
+    const variants = (acm as any).variants || {};
+    const colArrays: Record<string, string[]> = {};
+    let maxLen = 0;
+    matrixLocales.forEach((loc) => {
+      const arr = Array.isArray(variants?.[loc]?.[matrixKindKey]) ? variants[loc][matrixKindKey] : [];
+      colArrays[loc] = arr.map((x: any) => String(x ?? ''));
+      if (colArrays[loc].length > maxLen) maxLen = colArrays[loc].length;
+    });
+    const rows: Array<{ idx: number; cells: Record<string, string> }> = [];
+    for (let i = 0; i < maxLen; i += 1) {
+      const cells: Record<string, string> = {};
+      matrixLocales.forEach((loc) => {
+        cells[loc] = colArrays[loc]?.[i] ?? '';
+      });
+      rows.push({ idx: i, cells });
+    }
+    const q = matrixSearch.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((r) => Object.values(r.cells).some((txt) => txt.toLowerCase().includes(q)));
+  }, [result, matrixLocales, matrixKindKey, matrixSearch]);
+
+  const updateMatrixCell = (locale: string, idx: number, next: string) => {
+    if (!result?.ad_copy_matrix || !onResultUpdate) return;
+    const acm = result.ad_copy_matrix as AnyObj;
+    const variants = { ...(acm.variants || {}) } as AnyObj;
+    const locVariant = { ...(variants[locale] || {}) } as AnyObj;
+    const arr = Array.isArray(locVariant[matrixKindKey]) ? [...locVariant[matrixKindKey]] : [];
+    while (arr.length <= idx) arr.push('');
+    arr[idx] = String(next);
+    locVariant[matrixKindKey] = arr;
+    variants[locale] = locVariant;
+    const nextAcm = { ...acm, variants };
+    onResultUpdate({ ...result, ad_copy_matrix: nextAcm });
+  };
+
+  const exportMatrixCsv = () => {
+    if (!matrixLocales.length) return;
+    const header = ['slot', ...matrixLocales];
+    const escape = (v: string) => {
+      const s = String(v ?? '');
+      if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    };
+    const lines = [header.map(escape).join(',')];
+    matrixRows.forEach((row) => {
+      const cells = [String(row.idx + 1), ...matrixLocales.map((loc) => row.cells[loc] ?? '')];
+      lines.push(cells.map(escape).join(','));
+    });
+    const body = lines.join('\n');
+    const name = `${String(result?.script_id || 'copy_matrix')}_${matrixKind}.csv`;
+    downloadText(name, '\uFEFF' + body, 'text/csv;charset=utf-8;');
   };
 
   const renderHighlighted = (text: string, spans: Array<[number, number]>) => {
@@ -229,6 +363,9 @@ export function ResultDashboardView({
                 <Download className="w-4 h-4" /> {t('lab.dashboard.btn_pdf')}
               </button>
             )}
+            <button type="button" onClick={exportDeliveryPack} className="btn-director-secondary px-3 py-1.5 text-[11px] font-bold flex items-center gap-2">
+              <Package className="w-4 h-4" /> {t('lab.dashboard.btn_delivery_pack') || 'Delivery Pack'}
+            </button>
             <button type="button" onClick={openOutFolder} className="btn-director-secondary px-3 py-1.5 text-[11px] font-bold flex items-center gap-2">
               <FolderOpen className="w-4 h-4" /> {t('lab.dashboard.btn_open_folder')}
             </button>
@@ -260,8 +397,32 @@ export function ResultDashboardView({
           </div>
 
           <div className="min-h-0 flex flex-col">
-            <div className="shrink-0 px-4 py-2 border-b border-outline-variant/20 flex items-center justify-between gap-3">
-              <div className="text-[10px] font-black tracking-widest text-secondary uppercase">{t('lab.dashboard.ad_copy_hub')}</div>
+            <div className="shrink-0 px-4 py-2 border-b border-outline-variant/20 flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="text-[10px] font-black tracking-widest text-secondary uppercase">{t('lab.dashboard.ad_copy_hub')}</div>
+                {result?.ad_copy_matrix && (
+                  <div className="inline-flex items-center rounded-full border border-outline-variant/40 bg-surface-container-low p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setCopyView('cards')}
+                      className={`px-2 py-1 rounded-full text-[10px] font-bold flex items-center gap-1.5 transition-colors ${
+                        copyView === 'cards' ? 'bg-secondary/15 text-secondary' : 'text-on-surface-variant hover:text-on-surface'
+                      }`}
+                    >
+                      <LayoutGrid className="w-3 h-3" /> {t('lab.dashboard.view_cards') || 'Cards'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCopyView('matrix')}
+                      className={`px-2 py-1 rounded-full text-[10px] font-bold flex items-center gap-1.5 transition-colors ${
+                        copyView === 'matrix' ? 'bg-secondary/15 text-secondary' : 'text-on-surface-variant hover:text-on-surface'
+                      }`}
+                    >
+                      <Table2 className="w-3 h-3" /> {t('lab.dashboard.view_matrix') || 'Matrix'}
+                    </button>
+                  </div>
+                )}
+              </div>
               {compliance && (
                 <button
                   type="button"
@@ -281,7 +442,130 @@ export function ResultDashboardView({
               )}
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-4 space-y-4" style={{ scrollbarGutter: 'stable' }}>
-              {(() => {
+              {partialFailure && (
+                <div className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                  <div className="text-[11px] text-amber-800 font-semibold leading-relaxed">
+                    {t('lab.dashboard.partial_failure_banner') || 'Some regions failed to generate. Retry individually below.'}
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {Object.entries(regionStatuses).map(([rid, status]) => (
+                        <span
+                          key={rid}
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            status === 'ok'
+                              ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                              : status === 'fallback'
+                              ? 'text-amber-700 bg-amber-50 border-amber-300'
+                              : 'text-red-700 bg-red-50 border-red-300'
+                          }`}
+                        >
+                          {rid}: {String(status).toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {copyView === 'matrix' && result?.ad_copy_matrix ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="inline-flex items-center rounded-full border border-outline-variant/40 bg-surface-container-low p-0.5">
+                      {(['headline', 'primary_text', 'hashtag'] as const).map((k) => (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => setMatrixKind(k)}
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                            matrixKind === k ? 'bg-primary/15 text-primary' : 'text-on-surface-variant hover:text-on-surface'
+                          }`}
+                        >
+                          {k === 'headline'
+                            ? t('lab.dashboard.headlines')
+                            : k === 'primary_text'
+                            ? t('lab.dashboard.primary_texts')
+                            : t('lab.dashboard.hashtags')}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 rounded-full border border-outline-variant/40 bg-surface-container-low px-2 py-1 text-[11px]">
+                        <Search className="w-3.5 h-3.5 text-on-surface-variant" />
+                        <input
+                          type="text"
+                          value={matrixSearch}
+                          onChange={(e) => setMatrixSearch(e.target.value)}
+                          placeholder={t('lab.dashboard.matrix_search_placeholder') || 'Search...'}
+                          className="bg-transparent outline-none w-36 text-on-surface placeholder:text-on-surface-variant"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={exportMatrixCsv}
+                        disabled={!matrixLocales.length || !matrixRows.length}
+                        className="btn-director-secondary px-2.5 py-1 text-[10px] font-bold flex items-center gap-1.5 disabled:opacity-50"
+                      >
+                        <Download className="w-3.5 h-3.5" /> {t('lab.dashboard.btn_csv') || 'CSV'}
+                      </button>
+                    </div>
+                  </div>
+                  {matrixLocales.length === 0 ? (
+                    <div className="text-[12px] text-on-surface-variant">{t('lab.dashboard.no_tiles')}</div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-xl border border-outline-variant/30 bg-surface-container-lowest">
+                      <table className="min-w-full text-[12px] border-collapse">
+                        <thead>
+                          <tr className="bg-surface-container-high/60">
+                            <th className="text-left px-2 py-1.5 text-[10px] font-black uppercase tracking-widest text-on-surface-variant border-b border-outline-variant/30 sticky left-0 bg-surface-container-high z-[1]">#</th>
+                            {matrixLocales.map((loc) => {
+                              const rp = loc.includes(':') ? loc.split(':', 2)[0] : '';
+                              const rs = rp ? regionStatuses[rp] : '';
+                              return (
+                                <th key={loc} className="text-left px-2 py-1.5 text-[10px] font-black uppercase tracking-widest text-on-surface-variant border-b border-outline-variant/30 whitespace-nowrap">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="truncate max-w-[200px]" title={loc}>{loc}</span>
+                                    {rs && rs !== 'ok' && (
+                                      <span className="text-[8px] font-bold px-1 py-0.5 rounded-full text-red-700 bg-red-50 border border-red-300">
+                                        {String(rs).toUpperCase()}
+                                      </span>
+                                    )}
+                                  </div>
+                                </th>
+                              );
+                            })}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {matrixRows.length === 0 ? (
+                            <tr>
+                              <td colSpan={matrixLocales.length + 1} className="px-2 py-4 text-center text-on-surface-variant">
+                                {t('lab.dashboard.matrix_empty') || 'No matches.'}
+                              </td>
+                            </tr>
+                          ) : (
+                            matrixRows.map((row) => (
+                              <tr key={row.idx} className="hover:bg-surface-container-high/30">
+                                <td className="align-top px-2 py-1.5 text-[10px] font-mono text-on-surface-variant border-b border-outline-variant/20 sticky left-0 bg-surface-container-lowest">
+                                  {row.idx + 1}
+                                </td>
+                                {matrixLocales.map((loc) => (
+                                  <td key={loc} className="align-top px-2 py-1 border-b border-outline-variant/20 min-w-[200px]">
+                                    <textarea
+                                      value={row.cells[loc] ?? ''}
+                                      onChange={(e) => updateMatrixCell(loc, row.idx, e.target.value)}
+                                      rows={Math.max(1, Math.min(4, Math.ceil(((row.cells[loc] ?? '').length || 1) / 40)))}
+                                      className="w-full bg-transparent outline-none text-[12px] text-on-surface resize-y py-1 px-1.5 rounded-lg border border-transparent hover:border-outline-variant/30 focus:border-primary/60 focus:bg-surface transition-colors"
+                                    />
+                                  </td>
+                                ))}
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              ) : (() => {
                 const byLocale: Record<string, any[]> = {};
                 adCopyTiles.forEach((t: any) => {
                   const loc = String(t?.locale || 'default');
@@ -295,21 +579,63 @@ export function ResultDashboardView({
                   const headlines = tiles.filter((x) => x.kind === 'headline').slice(0, 50);
                   const primary = tiles.filter((x) => x.kind === 'primary_text').slice(0, 20);
                   const hashtags = tiles.filter((x) => x.kind === 'hashtag').slice(0, 40);
+                  // Parse "region:locale" style keys so we can surface per-region status / retry.
+                  const regionPart = loc.includes(':') ? loc.split(':', 2)[0] : '';
+                  const regionStatus = regionPart ? regionStatuses[regionPart] : '';
+                  const regionErr = regionPart ? regionErrors[regionPart] : '';
+                  const needsRetry = regionStatus && regionStatus !== 'ok';
                   return (
-                    <div key={loc} className="bg-surface-container-lowest border border-outline-variant/35 rounded-2xl p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="text-[10px] font-black tracking-widest text-on-surface-variant uppercase">{loc}</div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            copyToClipboard(
-                              [...headlines.map((h: any) => String(h.text || '')), '', ...primary.map((p: any) => String(p.text || '')), '', hashtags.map((h: any) => String(h.text || '')).join(' ')].join('\n'),
-                            )
-                          }
-                          className="text-[10px] font-bold text-on-surface-variant hover:text-on-surface flex items-center gap-1.5"
-                        >
-                          <Copy className="w-3.5 h-3.5" /> {t('lab.dashboard.copy_all')}
-                        </button>
+                    <div
+                      key={loc}
+                      className={`rounded-2xl p-3 border ${
+                        needsRetry
+                          ? 'bg-red-50/40 border-red-300'
+                          : 'bg-surface-container-lowest border-outline-variant/35'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2 gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="text-[10px] font-black tracking-widest text-on-surface-variant uppercase truncate">{loc}</div>
+                          {regionStatus && (
+                            <span
+                              className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${
+                                regionStatus === 'ok'
+                                  ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                                  : regionStatus === 'fallback'
+                                  ? 'text-amber-700 bg-amber-50 border-amber-300'
+                                  : 'text-red-700 bg-red-50 border-red-300'
+                              }`}
+                              title={regionErr || ''}
+                            >
+                              {String(regionStatus).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {needsRetry && regionPart && (
+                            <button
+                              type="button"
+                              onClick={() => retryRegion(regionPart)}
+                              disabled={retryingRegion === regionPart}
+                              className="text-[10px] font-bold text-red-700 hover:text-red-900 flex items-center gap-1.5 disabled:opacity-60"
+                              title={regionErr || ''}
+                            >
+                              <RefreshCw className={`w-3.5 h-3.5 ${retryingRegion === regionPart ? 'animate-spin' : ''}`} />
+                              {t('lab.dashboard.retry_region') || 'Retry region'}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              copyToClipboard(
+                                [...headlines.map((h: any) => String(h.text || '')), '', ...primary.map((p: any) => String(p.text || '')), '', hashtags.map((h: any) => String(h.text || '')).join(' ')].join('\n'),
+                              )
+                            }
+                            className="text-[10px] font-bold text-on-surface-variant hover:text-on-surface flex items-center gap-1.5"
+                          >
+                            <Copy className="w-3.5 h-3.5" /> {t('lab.dashboard.copy_all')}
+                          </button>
+                        </div>
                       </div>
                       <div className="grid grid-cols-1 gap-3">
                         {headlines.length > 0 && (

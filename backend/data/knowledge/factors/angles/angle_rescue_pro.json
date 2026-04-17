@@ -15,5 +15,12 @@
         "Cognitive Dissonance (Correcting the stupid player)"
     ],
     "kpi_focus": "CTR (High) & CVR (Mid-High). Best for Casual/Simulation games.",
-    "short_name": "Rescue"
+    "short_name": "Rescue",
+    "priority_weight": 1.0,
+    "script_logic": {
+        "hook": "Cold Open (0-2s): Use a 'Cold Palette' (blue/grey) showing a vulnerable character shivering. Contrast with a 'Warm Goal' (fire/house).",
+        "build_up": "Choice Crisis: Offer three tools. The visual cursor must hover over the correct tool but eventually drag the 'disastrously wrong' one (e.g., using a bucket of ice to put out a fire).",
+        "climax": "Escalation: The character's state must visibly worsen (turning into an ice block or crying).",
+        "cta": "The Interruption: Cut to CTA at the peak of the character's distress with text: 'Only YOU can save them'."
+    }
 }

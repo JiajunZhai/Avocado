@@ -23,5 +23,12 @@
         "execution": "End the video with: 'The first 100 players to download get this Admin Starter Pack.' Show a screenshot of a 999x Value box."
     },
     "core_emotion": "Envy, Greed, and the Craving for Absolute Power",
-    "short_name": "WhaleFlex"
+    "short_name": "WhaleFlex",
+    "priority_weight": 1.0,
+    "script_logic": {
+        "hook": "The Wallet Shock (0-1s): Immediate close-up of a premium currency bar with '999,999,999' gems. The numbers must still be ticking upward rapidly.",
+        "build_up": "The 'Shopping Spree' Montage: Use ultra-fast cuts (0.5s each) showing 'Buy All' buttons being smashed, Gacha animations skipped to reveal 10x legendary pulls, and 1-tap instant construction of a max-level base.",
+        "climax": "The 'God-Mode' Combat: Show a single character or unit walking through an entire enemy army. Damage numbers should be so large they 'break' the UI or cover the screen.",
+        "cta": "The 'Secret Leak' Caption: Instead of just being rich, use captions like: 'Did the dev forget to lock this?', 'Is this even legal?', or 'POV: You found the admin test account'."
+    }
 }

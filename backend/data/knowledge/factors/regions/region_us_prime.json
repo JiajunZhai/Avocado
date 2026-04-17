@@ -17,5 +17,10 @@
     ],
     "preferred_bgm": "Deep Bass, Cinematic Orchestral (for SLG/RPG) or Upbeat Hip-Hop/Phonk (for Action/Casual).",
     "focus": "Instant Gratification (Action) > Strategic Freedom (Control) > Social Status (Competition)",
-    "short_name": "US"
+    "short_name": "US",
+    "taboo": [
+        "General extreme violence or severe local offenses"
+    ],
+    "local_hook": "Local cultural meme/hook placeholder",
+    "language_nuance": "Standard localization tone"
 }

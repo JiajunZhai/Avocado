@@ -21,5 +21,10 @@
     },
     "preferred_bgm": "Cinematic fusion: Traditional Oud/Ney instruments mixed with high-end orchestral percussion (Hans Zimmer style).",
     "focus": "Honor & Reputation (Social) > Power & Domination (PVP) > Wealth Display (Spend)",
-    "short_name": "ME"
+    "short_name": "ME",
+    "taboo": [
+        "General extreme violence or severe local offenses"
+    ],
+    "local_hook": "Local cultural meme/hook placeholder",
+    "language_nuance": "Standard localization tone"
 }

@@ -34,5 +34,8 @@
         "retention_logic": "Feature 'Gift-giving' or 'Loot-opening' moments at the 5s mark",
         "conversion_focus": "Align CTA with the user's desire for social connection or territorial dominance"
     },
-    "short_name": "Bigo"
+    "short_name": "Bigo",
+    "safety_zone": "Center screen, avoid bottom 20% overlay",
+    "attention_span": "First 3 seconds critical drop-off point",
+    "cta_style": "Direct and high urgency"
 }

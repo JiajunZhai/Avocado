@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { Clapperboard, LayoutDashboard, Sparkles, Settings, LifeBuoy, Compass, ChevronsUpDown, ChevronRight, Check, Activity } from 'lucide-react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { Clapperboard, LayoutDashboard, Sparkles, Settings, LifeBuoy, Compass, ChevronsUpDown, ChevronRight, Check, Activity, ShieldCheck, BrainCircuit } from 'lucide-react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useReducedMotion } from 'framer-motion';
 import axios from 'axios';
 import { API_BASE } from '../config/apiBase';
@@ -96,20 +96,24 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const navItems = [
     { to: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
     { to: '/generator', label: t('nav.lab'), icon: Sparkles },
-    { to: '/oracle', label: t('nav.oracle'), icon: Compass }
+    { to: '/oracle', label: t('nav.oracle'), icon: Compass },
+    { to: '/compliance', label: t('nav.compliance'), icon: ShieldCheck },
+    { to: '/settings/providers', label: t('nav.providers'), icon: BrainCircuit }
   ];
 
-  return (
+    const navigate = useNavigate();
+    
+    return (
     <div className="h-screen flex bg-background text-on-background">
       <aside className="hidden lg:flex h-screen w-64 fixed left-0 top-0 border-r border-outline-variant/20 bg-surface-container-low flex-col py-6 z-50 overflow-visible layout-sidebar-edge">
-        <div className="px-6 mb-8 mt-1 group cursor-pointer flex items-center gap-3" onClick={() => window.location.href = '/'}>
+        <div className="px-6 mb-8 mt-1 group cursor-pointer flex items-center gap-3" onClick={() => navigate('/hub')}>
           <div className="relative flex items-center justify-center shrink-0">
             <div className="absolute inset-0 bg-primary/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <img src={systemLogo} alt="System Logo" className="relative h-[34px] w-auto object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-sm" />
           </div>
           <div className="flex flex-col justify-center overflow-hidden">
             <span className="text-[14px] font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-on-surface to-on-surface-variant leading-tight truncate">
-              AdCreative AI
+              Avocado
             </span>
             <span className="text-[8.5px] font-bold tracking-[0.2em] text-primary/80 uppercase mt-0.5 truncate">
               SOP Engine

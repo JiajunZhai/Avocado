@@ -1,12 +1,22 @@
-"""Keep RAG tests on TF-IDF so CI does not download embedding models."""
+"""Keep RAG tests on TF-IDF so CI does not download embedding models.
+
+Phase 26/E — also redirect the SQLite backbone to a per-session temp file so
+tests never mutate the developer's local `backend/data/app.sqlite3`.
+"""
 import os
+import tempfile
+from pathlib import Path
 
 import pytest
-from fastapi.testclient import TestClient
 
-import main
+os.environ.setdefault("RAG_RETRIEVAL", "tfidf")
+# Force per-run DB before `main` (and thus `db.py`) is imported.
+_TMP_DB_DIR = Path(tempfile.mkdtemp(prefix="adcreative_test_db_"))
+os.environ["DB_PATH"] = str(_TMP_DB_DIR / "app.sqlite3")
 
-os.environ["RAG_RETRIEVAL"] = "tfidf"
+from fastapi.testclient import TestClient  # noqa: E402  (env must be set first)
+
+import main  # noqa: E402
 
 
 @pytest.fixture()

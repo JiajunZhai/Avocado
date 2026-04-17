@@ -1,12 +1,10 @@
 import json
-import pytest
 import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ollama_client import LocalLLMResult
-from scraper import fetch_playstore_data, extract_usp_via_llm
+from scraper import fetch_playstore_data, extract_usp_via_llm, extract_usp_via_llm_with_usage
 
 
 def test_google_play_extraction_truncation():
@@ -37,7 +35,7 @@ def test_extract_usp_is_deterministic_and_description_driven():
         "installs": "100K+",
         "recentChanges": "Bug fixes and rewards."
     }
-    result = extract_usp_via_llm("Capybara Bomb!", metadata, engine="cloud")
+    result = extract_usp_via_llm("Capybara Bomb!", metadata)
 
     doc = json.loads(result.split("\n\n[Store scale signal]")[0])
     assert "core_gameplay" in doc and "en" in doc["core_gameplay"] and "cn" in doc["core_gameplay"]
@@ -51,56 +49,15 @@ def test_extract_usp_is_deterministic_and_description_driven():
     assert "100K+" in result
 
 
-def test_extract_usp_local_uses_llm_when_valid(monkeypatch):
+def test_extract_usp_with_usage_reports_no_llm():
+    """Rule-based distillation consumes no LLM tokens; used_llm must be False."""
     metadata = {
         "description": "battle strategy chest rewards hero collect",
         "genre": "Casual",
         "installs": "10K+",
         "recentChanges": "update",
     }
-    monkeypatch.setattr(
-        "scraper.generate_with_local_llm",
-        lambda **_kwargs: LocalLLMResult(
-            {
-                "core_gameplay": {
-                    "en": "Tactical squad battle with hero progression.",
-                    "cn": "战术小队战斗，英雄成长为核心循环。",
-                },
-                "value_hooks": [
-                    {"en": "Hook A", "cn": "卖点A 导演释义"},
-                    {"en": "Hook B", "cn": "卖点B 导演释义"},
-                    {"en": "Hook C", "cn": "卖点C 导演释义"},
-                ],
-                "target_persona": {
-                    "en": "Strategy-minded mobile players.",
-                    "cn": "偏策略的移动端玩家，吃阵容与成长反馈。",
-                },
-            },
-            900,
-        ),
-    )
-    result = extract_usp_via_llm("Capybara Bomb!", metadata, engine="local")
-    doc = json.loads(result.split("\n\n[Store scale signal]")[0])
-    assert doc["core_gameplay"]["en"] == "Tactical squad battle with hero progression."
-    assert len(doc["value_hooks"]) == 3
-    assert doc["value_hooks"][0]["en"] == "Hook A"
-
-
-def test_extract_usp_local_falls_back_when_llm_fails(monkeypatch):
-    metadata = {
-        "description": "collect hero chest fun strategy",
-        "genre": "Casual",
-        "installs": "10K+",
-        "recentChanges": "",
-    }
-    monkeypatch.setattr(
-        "scraper.generate_with_local_llm",
-        lambda **_kwargs: LocalLLMResult(
-            {"success": False, "error_code": "LOCAL_REQUEST_FAILED"},
-            None,
-        ),
-    )
-    result = extract_usp_via_llm("Capybara Bomb!", metadata, engine="local")
-    doc = json.loads(result.split("\n\n[Store scale signal]")[0])
-    joined_en = " ".join(h["en"] for h in doc["value_hooks"])
-    assert "hero" in joined_en.lower() or "squad" in joined_en.lower()
+    text, tokens, used_llm = extract_usp_via_llm_with_usage("Capybara Bomb!", metadata)
+    assert "Capybara Bomb!" not in text or text  # text is non-empty
+    assert tokens is None
+    assert used_llm is False

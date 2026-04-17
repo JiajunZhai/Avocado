@@ -22,7 +22,7 @@
 | P0-05 | Script editable | Step4 loaded | Edit one `visual` and one `audio_content` field | Value updates in place, unsaved indicator appears |
 | P0-06 | Markdown export | Step4 loaded | Click `复制文案 (Markdown)` | Clipboard is updated and no UI crash |
 | P0-07 | PDF export success | Step4 loaded | Click `导出给剪辑师 (PDF)` | PDF download starts and UI remains responsive |
-| P0-08 | Local failure visibility | Force local Ollama fail | Set engine=local and generate | Error visible in step3, no jump to step4 |
+| P0-08 | Cloud failure visibility | Force DeepSeek failure (unset `DEEPSEEK_API_KEY` or simulate upstream error) | Trigger generate in step3 | HTTP 502 with `CLOUD_UNAVAILABLE` / `CLOUD_SYNTHESIS_FAILED` surfaced in UI, no jump to step4 |
 | P0-09 | Export gate blocks bad payload | Trigger error placeholder payload | Request `/api/export/pdf` with invalid/error data | HTTP 400 and clear error detail |
 | P0-10 | Script history persistence | At least one successful generation | Refresh page and return to step4 | History list still exists with latest item |
 | P0-11 | Script history load | History has multiple items | Click `加载` on one record | Form + result restored for selected record |

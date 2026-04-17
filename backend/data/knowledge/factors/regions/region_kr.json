@@ -15,5 +15,10 @@
     },
     "preferred_bgm": "K-Pop style high-energy tracks or epic cinematic orchestral with fast beats.",
     "focus": "Competitive Status > Visual Splendor > Efficiency",
-    "short_name": "KR"
+    "short_name": "KR",
+    "taboo": [
+        "General extreme violence or severe local offenses"
+    ],
+    "local_hook": "Local cultural meme/hook placeholder",
+    "language_nuance": "Standard localization tone"
 }

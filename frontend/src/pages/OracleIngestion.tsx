@@ -19,14 +19,36 @@ export const OracleIngestion: React.FC = () => {
 
   const [totalRules, setTotalRules] = useState<number>(0);
   const [intelList, setIntelList] = useState<any[]>([]);
+  // Phase 26/E — retrieval pipeline status for the Refinery panel.
+  const [retrievalBackend, setRetrievalBackend] = useState<string>('hybrid');
+  const [ftsEnabled, setFtsEnabled] = useState<boolean>(false);
+  const [vectorsCount, setVectorsCount] = useState<number>(0);
+  const [rerankStatus, setRerankStatus] = useState<string>('off');
+  const [isReindexing, setIsReindexing] = useState<boolean>(false);
 
   const fetchStats = async () => {
     try {
       const res = await axios.get(`${API_BASE}/api/refinery/stats`);
       setTotalRules(res.data.total_rules || 0);
       setIntelList(res.data.recent_intel || []);
+      if (res.data.retrieval_backend) setRetrievalBackend(res.data.retrieval_backend);
+      setFtsEnabled(Boolean(res.data.fts5));
+      setVectorsCount(res.data.vectors || 0);
+      setRerankStatus(res.data.rerank || 'off');
     } catch (e) {
       console.error("Failed to fetch refinery stats", e);
+    }
+  };
+
+  const handleReindex = async () => {
+    setIsReindexing(true);
+    try {
+      await axios.post(`${API_BASE}/api/knowledge/reindex`, {});
+      await fetchStats();
+    } catch (e) {
+      console.error('reindex failed', e);
+    } finally {
+      setIsReindexing(false);
     }
   };
 
@@ -232,13 +254,30 @@ export const OracleIngestion: React.FC = () => {
                 <Target className="w-4 h-4 text-secondary-fixed-dim" />
                 <h3 className="text-sm font-black text-on-surface uppercase tracking-wide">{t('oracle.intel_feed')}</h3>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 text-[10px] font-mono text-on-surface-variant bg-surface-container px-2 py-1 rounded-md border border-outline-variant/20 shadow-inner">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.8)]" /> RAG ON
-                </div>
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <span className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase text-on-surface-variant bg-surface-container px-2 py-1 rounded-md border border-outline-variant/20 shadow-inner">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.8)]" /> {t('oracle.retrieval_backend', { backend: retrievalBackend })}
+                </span>
+                <span className={`text-[10px] font-mono font-bold uppercase px-2 py-1 rounded-md border shadow-inner ${ftsEnabled ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-surface-container text-on-surface-variant/60 border-outline-variant/20'}`}>
+                  {t('oracle.fts_tag', { state: ftsEnabled ? 'ON' : 'OFF' })}
+                </span>
+                <span className={`text-[10px] font-mono font-bold uppercase px-2 py-1 rounded-md border shadow-inner ${rerankStatus === 'on' ? 'bg-secondary/10 text-secondary border-secondary/20' : 'bg-surface-container text-on-surface-variant/60 border-outline-variant/20'}`}>
+                  {t('oracle.rerank_tag', { state: (rerankStatus || 'off').toUpperCase() })}
+                </span>
+                <span className="text-[10px] font-mono font-bold uppercase text-on-surface-variant bg-surface-container px-2 py-1 rounded-md border border-outline-variant/20 shadow-inner">
+                  {t('oracle.vectors_tag', { count: vectorsCount })}
+                </span>
                 <span className="text-[10px] flex items-center gap-1 text-on-surface-variant font-bold opacity-80">
                   {t('oracle.rag_rules', { count: totalRules })}
                 </span>
+                <button
+                  type="button"
+                  onClick={handleReindex}
+                  disabled={isReindexing}
+                  className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md border border-secondary/30 text-secondary bg-secondary/10 hover:bg-secondary/20 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                >
+                  {isReindexing ? t('oracle.reindexing') : t('oracle.reindex')}
+                </button>
               </div>
             </div>
 

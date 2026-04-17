@@ -4,14 +4,13 @@
 
 ### Covered Now
 - API routes and error branches: `backend/tests/test_api_routes.py`
-- Local model parsing/error contract: `backend/tests/test_ollama_client.py`
-- Scraper extraction stability + local fallback: `backend/tests/test_scraper.py`
+- Scraper extraction stability + rule-based fallback: `backend/tests/test_scraper.py`
 - Oracle/refinery behavior: `backend/tests/test_refinery.py`
 - Business flow integration (API-level): `backend/tests/test_business_flow_e2e.py`
 
 ### Keep in Pytest
 - Schema validation and HTTP status assertions
-- Branch behavior for local/cloud engines
+- Cloud failure paths (`CLOUD_UNAVAILABLE` / `CLOUD_SYNTHESIS_FAILED` / `DRAFT_UNAVAILABLE`)
 - PDF export gatekeeping and error code assertions
 
 ## Playwright (Frontend User Journeys)
@@ -25,7 +24,7 @@
 
 ### P1 E2E Candidates
 - `/oracle` ingest flow then back to `/generator`
-- Local failure UI messaging and recovery actions
+- Cloud failure UI messaging and recovery actions (502 surfacing)
 - Middle East region behavior + RTL visual checks
 
 ## CI Recommendation

@@ -18,5 +18,8 @@
         "The 'One More Try' Loop: If they fail the playable, offer a 'Retry' button that leads to the App Store."
     ],
     "focus": "Gameplay Core (The 'Fun' Loop) > Conversion Efficiency",
-    "short_name": "AppLovinUnity"
+    "short_name": "AppLovinUnity",
+    "safety_zone": "Center screen, avoid bottom 20% overlay",
+    "attention_span": "First 3 seconds critical drop-off point",
+    "cta_style": "Direct and high urgency"
 }

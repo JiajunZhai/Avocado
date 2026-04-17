@@ -44,7 +44,7 @@ def test_usage_tracker_resets_on_date_change(tmp_path, monkeypatch):
 def test_usage_tracker_script_stats_are_derived(tmp_path, monkeypatch):
     monkeypatch.setattr(usage_tracker, "_STATE_PATH", tmp_path / "u.json")
     usage_tracker.record_generate_success("cloud", measured_tokens=4000)
-    usage_tracker.record_generate_success("local", measured_tokens=None)
+    usage_tracker.record_generate_success("cloud", measured_tokens=None)
     s = usage_tracker.get_summary()
     assert s["script_generations_today"] == 2
     assert s["last_script_tokens"] > 0

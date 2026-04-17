@@ -22,5 +22,8 @@
         "Cinematic Immersion: High-quality lore and world-building that looks like a movie trailer."
     ],
     "focus": "Immediate Intrigue (First 5s) > Brand Authority > High-intent Search",
-    "short_name": "GoogleYT"
+    "short_name": "GoogleYT",
+    "safety_zone": "Center screen, avoid bottom 20% overlay",
+    "attention_span": "First 3 seconds critical drop-off point",
+    "cta_style": "Direct and high urgency"
 }

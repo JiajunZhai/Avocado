@@ -22,5 +22,8 @@
         "Relatable Situations: Real-life scenarios (e.g., a person playing at a coffee shop) that bridge the gap between reality and game."
     ],
     "focus": "Trust & Community (Social Validation) > Aesthetic Appeal",
-    "short_name": "Meta"
+    "short_name": "Meta",
+    "safety_zone": "Center screen, avoid bottom 20% overlay",
+    "attention_span": "First 3 seconds critical drop-off point",
+    "cta_style": "Direct and high urgency"
 }

@@ -16,5 +16,12 @@
         "Stress Relief"
     ],
     "kpi_focus": "Retention (VTR) and Lowering CPI in high-latency markets.",
-    "short_name": "ASMR"
+    "short_name": "ASMR",
+    "priority_weight": 1.0,
+    "script_logic": {
+        "hook": "The 'Itch' (0-3s): Show a highly 'uncomfortable' visual—tangled wires, a mud-caked object, or unsorted items.",
+        "build_up": "The Process: A tool moves at a constant speed, 'cleaning' or 'sorting' with ultra-clear, layered SFX (Scraping, Popping, Shoveling).",
+        "climax": "The Loop: The visuals should be rhythmic and hypnotic. Each action must result in a 'Clean Surface' or 'Perfect Fit'.",
+        "cta": "The Perfection Gap: At 90% completion, the tool makes a 'clumsy mistake' or the video loops. This triggers an irresistible urge to finish the task."
+    }
 }

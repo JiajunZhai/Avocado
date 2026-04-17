@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Beaker, Layers, Network, Database, Target, Lock, Play, Activity, Globe, MonitorPlay, BrainCircuit, RefreshCw, Eye, Info } from 'lucide-react';
+import { Beaker, Layers, Network, Database, Target, Lock, Play, Activity, Globe, MonitorPlay, BrainCircuit, RefreshCw, Eye, Info, Pin, PinOff, Trash2, ListPlus, ListChecks, X, CheckCircle, XCircle, Clock, Save } from 'lucide-react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import { API_BASE } from '../config/apiBase';
 import { useProjectContext } from '../context/ProjectContext';
 import { useShellActivity } from '../context/ShellActivityContext';
 import { ProSelect } from '../components/ProSelect';
 import { useTranslation } from 'react-i18next';
 import { ResultDashboardView } from '../components/ResultDashboardView';
+import { useLabQueue, type QueueJobPayload } from '../hooks/useLabQueue';
 
 export const Lab: React.FC = () => {
   const { t } = useTranslation();
@@ -68,11 +70,27 @@ export const Lab: React.FC = () => {
   const [complianceSuggest, setComplianceSuggest] = useState<boolean>(() => {
     return localStorage.getItem('sop_compliance_suggest') === '1';
   });
-  
+
+  // Phase 25 / D3 — Engine Selector state. Provider + model are persisted so
+  // power users don't have to re-select each session. An empty provider means
+  // "let the server pick its default" (usually DeepSeek).
+  const [engineProvider, setEngineProvider] = useState<string>(() => {
+    return String(localStorage.getItem('sop_engine_provider') || '');
+  });
+  const [engineModel, setEngineModel] = useState<string>(() => {
+    return String(localStorage.getItem('sop_engine_model') || '');
+  });
+  const [providersCatalog, setProvidersCatalog] = useState<any[]>([]);
+  const [defaultProviderId, setDefaultProviderId] = useState<string>('deepseek');
+
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [synthesisResult, setSynthesisResult] = useState<any>(null);
   const [isSyncingFeed, setIsSyncingFeed] = useState(false);
   const [dashboardOpen, setDashboardOpen] = useState(false);
+
+  // Phase 23 / B2 — Pre-flight cost estimate (debounced)
+  const [estimate, setEstimate] = useState<any>(null);
+  const [estimateLoading, setEstimateLoading] = useState(false);
 
   // Syncing simulation hook
   useEffect(() => {
@@ -110,12 +128,83 @@ export const Lab: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('sop_compliance_suggest', complianceSuggest ? '1' : '0');
   }, [complianceSuggest]);
+  useEffect(() => {
+    localStorage.setItem('sop_engine_provider', engineProvider);
+  }, [engineProvider]);
+  useEffect(() => {
+    localStorage.setItem('sop_engine_model', engineModel);
+  }, [engineModel]);
+
+  // Phase 25/D3 — pull the provider catalog once on mount.
+  useEffect(() => {
+    axios
+      .get(`${API_BASE}/api/providers`)
+      .then((res) => {
+        const body = res.data || {};
+        setProvidersCatalog(Array.isArray(body.providers) ? body.providers : []);
+        if (body.default_provider_id) setDefaultProviderId(String(body.default_provider_id));
+      })
+      .catch(() => {
+        setProvidersCatalog([]);
+      });
+  }, []);
+
+  // When user picks a provider but no explicit model, reset model so the
+  // dropdown re-fills with that provider's choices on next render.
+  useEffect(() => {
+    if (!engineProvider) return;
+    const spec = providersCatalog.find((p: any) => p.id === engineProvider);
+    if (!spec) return;
+    if (engineModel && !(spec.model_choices || []).includes(engineModel)) {
+      setEngineModel('');
+    }
+  }, [engineProvider, providersCatalog, engineModel]);
 
   useEffect(() => {
     if (outputType === 'quick_copy' && regionId && copyRegionIds.length === 0) {
       setCopyRegionIds([regionId]);
     }
   }, [outputType, regionId, copyRegionIds.length]);
+
+  // B2 — debounced estimate fetcher. Parameters that affect cost are
+  // watched; 300ms debounce avoids hammering the endpoint on every keystroke.
+  useEffect(() => {
+    if (!regionId) return;
+    const payload: any = {
+      kind:
+        outputType === 'quick_copy'
+          ? 'quick_copy'
+          : synthesisMode === 'draft'
+          ? 'generate_draft'
+          : 'generate_full',
+      mode: synthesisMode,
+      compliance_suggest: complianceSuggest,
+    };
+    if (outputType === 'quick_copy') {
+      payload.quantity = copyQuantity;
+      payload.locales = copyLocales;
+      payload.region_ids = copyRegionIds.length ? copyRegionIds : [regionId];
+    }
+    if (engineProvider) payload.engine_provider = engineProvider;
+    const handle = window.setTimeout(() => {
+      setEstimateLoading(true);
+      axios
+        .post(`${API_BASE}/api/estimate`, payload)
+        .then((res) => setEstimate(res.data))
+        .catch(() => setEstimate(null))
+        .finally(() => setEstimateLoading(false));
+    }, 300);
+    return () => window.clearTimeout(handle);
+  }, [
+    outputType,
+    synthesisMode,
+    complianceSuggest,
+    copyQuantity,
+    copyLocales,
+    copyRegionIds,
+    regionId,
+    engineProvider,
+  ]);
 
   // Fetch DB
   useEffect(() => {
@@ -145,7 +234,7 @@ export const Lab: React.FC = () => {
     setSynthesisResult(null);
     try {
       const engine = "cloud";
-      const payloadBase = {
+      const payloadBase: any = {
         project_id: currentProject.id,
         region_id: regionId,
         platform_id: platformId,
@@ -154,6 +243,8 @@ export const Lab: React.FC = () => {
         output_mode: outputMode,
         compliance_suggest: complianceSuggest,
       };
+      if (engineProvider) payloadBase.engine_provider = engineProvider;
+      if (engineModel) payloadBase.engine_model = engineModel;
       const response = outputType === 'quick_copy'
         ? await axios.post(`${API_BASE}/api/quick-copy`, {
             ...payloadBase,
@@ -188,7 +279,7 @@ export const Lab: React.FC = () => {
     setSynthesisResult(null);
     try {
       const engine = "cloud";
-      const resp = await axios.post(`${API_BASE}/api/quick-copy/refresh`, {
+      const refreshPayload: any = {
         project_id: currentProject.id,
         base_script_id: sid,
         engine,
@@ -197,7 +288,10 @@ export const Lab: React.FC = () => {
         tones: copyTones,
         locales: copyLocales,
         compliance_suggest: complianceSuggest,
-      });
+      };
+      if (engineProvider) refreshPayload.engine_provider = engineProvider;
+      if (engineModel) refreshPayload.engine_model = engineModel;
+      const resp = await axios.post(`${API_BASE}/api/quick-copy/refresh`, refreshPayload);
       setSynthesisResult(resp.data);
       setDashboardOpen(true);
     } catch (e) {
@@ -207,6 +301,76 @@ export const Lab: React.FC = () => {
       setIsSynthesizing(false);
     }
   };
+
+  // B3 — Queue & Presets
+  const buildCurrentPayload = useCallback((): QueueJobPayload | null => {
+    if (!currentProject) return null;
+    const overrides: { engine_provider?: string; engine_model?: string } = {};
+    if (engineProvider) overrides.engine_provider = engineProvider;
+    if (engineModel) overrides.engine_model = engineModel;
+    if (outputType === 'quick_copy') {
+      return {
+        kind: 'quick_copy',
+        project_id: currentProject.id,
+        region_id: regionId,
+        platform_id: platformId,
+        angle_id: angleId,
+        engine: 'cloud',
+        output_mode: outputMode,
+        compliance_suggest: complianceSuggest,
+        quantity: copyQuantity,
+        tones: copyTones,
+        locales: copyLocales,
+        region_ids: copyRegionIds.length ? copyRegionIds : [regionId],
+        ...overrides,
+      };
+    }
+    return {
+      kind: 'full_sop',
+      project_id: currentProject.id,
+      region_id: regionId,
+      platform_id: platformId,
+      angle_id: angleId,
+      engine: 'cloud',
+      output_mode: outputMode,
+      compliance_suggest: complianceSuggest,
+      mode: synthesisMode,
+      ...overrides,
+    };
+  }, [
+    currentProject,
+    outputType,
+    regionId,
+    platformId,
+    angleId,
+    outputMode,
+    complianceSuggest,
+    copyQuantity,
+    copyTones,
+    copyLocales,
+    copyRegionIds,
+    synthesisMode,
+    engineProvider,
+    engineModel,
+  ]);
+
+  const queueRunner = useCallback(async (payload: QueueJobPayload) => {
+    let response;
+    if (payload.kind === 'quick_copy') {
+      response = await axios.post(`${API_BASE}/api/quick-copy`, payload);
+    } else if (payload.kind === 'refresh_copy') {
+      response = await axios.post(`${API_BASE}/api/quick-copy/refresh`, payload);
+    } else {
+      const { kind, ...rest } = payload;
+      response = await axios.post(`${API_BASE}/api/generate`, rest);
+    }
+    return response.data;
+  }, []);
+
+  const labQueue = useLabQueue(queueRunner);
+  const [queueOpen, setQueueOpen] = useState(false);
+  const [presetsOpen, setPresetsOpen] = useState(false);
+  const [newPresetName, setNewPresetName] = useState('');
 
   // Compliance rendering moved into ResultDashboardView.
 
@@ -279,7 +443,12 @@ export const Lab: React.FC = () => {
       <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-primary/5 rounded-full blur-[100px] pointer-events-none -z-10" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-secondary/5 rounded-full blur-[100px] pointer-events-none -z-10" />
 
-      <ResultDashboardView open={dashboardOpen} onClose={() => setDashboardOpen(false)} result={synthesisResult} />
+      <ResultDashboardView
+        open={dashboardOpen}
+        onClose={() => setDashboardOpen(false)}
+        result={synthesisResult}
+        onResultUpdate={(next) => setSynthesisResult(next)}
+      />
 
       <div className="max-w-[1600px] w-full mx-auto h-full flex flex-col min-h-0 card-base shadow-sm border border-outline-variant/30 p-6 lg:p-8 relative z-10">
         
@@ -479,6 +648,79 @@ export const Lab: React.FC = () => {
                    />
                  </div>
 
+                {/* Phase 25 / D3 — Engine Selector (provider → model) */}
+                <div className="sm:col-span-2 w-full bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow relative">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                      <BrainCircuit className="w-3 h-3 text-primary" />
+                    </div>
+                    <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('lab.console.engine.label')}</div>
+                    {(() => {
+                      const pid = engineProvider || defaultProviderId;
+                      const spec = providersCatalog.find((p: any) => p.id === pid);
+                      if (!spec) return null;
+                      return (
+                        <span
+                          className={`ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${
+                            spec.available
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                          }`}
+                          title={spec.available ? t('lab.console.engine.available') : t('lab.console.engine.fallback_hint')}
+                        >
+                          {spec.available ? 'READY' : 'FALLBACK'}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <div className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">{t('lab.console.engine.provider')}</div>
+                      <ProSelect
+                        value={engineProvider || defaultProviderId}
+                        onChange={(v) => {
+                          setEngineProvider(String(v || ''));
+                          setEngineModel('');
+                        }}
+                        options={providersCatalog.map((p: any) => ({
+                          value: String(p.id),
+                          label: `${p.label}${p.available ? '' : ' · ' + t('lab.console.engine.no_key')}`,
+                        }))}
+                        dropUp={true}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">{t('lab.console.engine.model')}</div>
+                      {(() => {
+                        const pid = engineProvider || defaultProviderId;
+                        const spec = providersCatalog.find((p: any) => p.id === pid);
+                        const choices: string[] = Array.isArray(spec?.model_choices) ? spec.model_choices : [];
+                        const options = [
+                          { value: '', label: t('lab.console.engine.default_model', { model: spec?.default_model || '' }) },
+                          ...choices.map((m: string) => ({ value: m, label: m })),
+                        ];
+                        return (
+                          <ProSelect
+                            value={engineModel}
+                            onChange={(v) => setEngineModel(String(v || ''))}
+                            options={options}
+                            dropUp={true}
+                          />
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-on-surface-variant">
+                    <span>{t('lab.console.engine.hint')}</span>
+                    <Link
+                      to="/settings/providers"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-outline-variant/60 hover:bg-surface-container text-[10px] font-semibold text-on-surface"
+                    >
+                      {t('lab.console.engine.manage')}
+                    </Link>
+                  </div>
+                </div>
+
                 {/* Compliance Suggest */}
                 <div className="sm:col-span-2 w-full bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow relative flex items-center justify-between gap-3">
                   <div className="min-w-0">
@@ -656,25 +898,298 @@ export const Lab: React.FC = () => {
                    </details>
                  )}
 
-                 {/* Generate */}
-                 <div className="sm:col-span-2 w-full shrink-0 pt-1">
-                   <motion.button
-                     whileHover={!(isSynthesizing || !currentProject || !regionId) ? { scale: 1.02 } : {}}
-                     whileTap={!(isSynthesizing || !currentProject || !regionId) ? { scale: 0.98 } : {}}
-                     onClick={handleSynthesize}
-                     disabled={isSynthesizing || !currentProject || !regionId}
-                     className={`btn-director-primary w-full py-3 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 shadow-md ${isSynthesizing ? 'opacity-70 cursor-wait' : ''}`}
-                   >
-                     {isSynthesizing ? (
-                       <><RefreshCw className="w-4 h-4 animate-spin" /> SYNTHESIZING...</>
-                     ) : (
-                       <><Play className="w-4 h-4" /> {t('nav.initiate')}</>
-                     )}
-                   </motion.button>
-                 </div>
-               </div>
-             </div>
-           </div>
+                {/* Generate */}
+                <div className="sm:col-span-2 w-full shrink-0 pt-1 space-y-2">
+                  {estimate && (
+                    <div
+                      className={`flex items-center justify-between gap-2 text-[10px] font-semibold px-3 py-2 rounded-lg border ${
+                        estimate.budget?.warn_level === 'block'
+                          ? 'bg-error/10 text-error border-error/40'
+                          : estimate.budget?.warn_level === 'critical'
+                          ? 'bg-amber-50 text-amber-700 border-amber-300'
+                          : estimate.budget?.warn_level === 'warn'
+                          ? 'bg-amber-50/60 text-amber-700 border-amber-200'
+                          : 'bg-surface-container-high text-on-surface-variant border-outline-variant/40'
+                      }`}
+                      aria-live="polite"
+                      title={t('lab.estimate.title') || 'Estimated cost'}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Activity className={`w-3 h-3 ${estimateLoading ? 'animate-pulse' : ''}`} />
+                        <span>
+                          {t('lab.estimate.label') || 'Estimate'}: ~
+                          {Number(estimate.total_tokens || 0).toLocaleString()} tok · ¥
+                          {Number(estimate.price_cny || 0).toFixed(3)}
+                        </span>
+                      </div>
+                      <span>
+                        {t('lab.estimate.remaining') || 'Remaining'}:{' '}
+                        {Number(estimate.budget?.projected_remaining_after || 0).toLocaleString()} /{' '}
+                        {Number(estimate.budget?.tokens_budget_today || 0).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  <motion.button
+                    whileHover={!(isSynthesizing || !currentProject || !regionId) ? { scale: 1.02 } : {}}
+                    whileTap={!(isSynthesizing || !currentProject || !regionId) ? { scale: 0.98 } : {}}
+                    onClick={() => {
+                      const warn = estimate?.budget?.warn_level;
+                      if (warn === 'critical' || warn === 'block') {
+                        const msg =
+                          t('lab.estimate.confirm_over_budget') ||
+                          'Daily token budget is almost depleted. Generate anyway?';
+                        if (!window.confirm(msg)) return;
+                      }
+                      handleSynthesize();
+                    }}
+                    disabled={isSynthesizing || !currentProject || !regionId}
+                    className={`btn-director-primary w-full py-3 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 shadow-md ${
+                      isSynthesizing ? 'opacity-70 cursor-wait' : ''
+                    } ${
+                      estimate?.budget?.warn_level === 'critical' || estimate?.budget?.warn_level === 'block'
+                        ? '!bg-amber-500 hover:!bg-amber-600 !text-white'
+                        : ''
+                    }`}
+                  >
+                    {isSynthesizing ? (
+                      <><RefreshCw className="w-4 h-4 animate-spin" /> SYNTHESIZING...</>
+                    ) : (
+                      <><Play className="w-4 h-4" /> {t('nav.initiate')}</>
+                    )}
+                  </motion.button>
+
+                  {/* B3 — Presets + Queue row */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPresetsOpen((v) => !v)}
+                      className="btn-director-ghost text-[10px] font-bold uppercase tracking-widest py-1.5 flex items-center justify-center gap-1.5"
+                      title={t('lab.presets.title') || 'Presets'}
+                    >
+                      <Save className="w-3.5 h-3.5" /> {t('lab.presets.label') || 'Presets'} ({labQueue.presets.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setQueueOpen((v) => !v)}
+                      className="btn-director-ghost text-[10px] font-bold uppercase tracking-widest py-1.5 flex items-center justify-center gap-1.5"
+                      title={t('lab.queue.title') || 'Queue'}
+                    >
+                      <ListChecks className="w-3.5 h-3.5" /> {t('lab.queue.label') || 'Queue'} ({labQueue.queue.length})
+                    </button>
+                  </div>
+
+                  <AnimatePresence initial={false}>
+                    {presetsOpen && (
+                      <motion.div
+                        key="presets-drawer"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden rounded-xl border border-outline-variant/35 bg-surface-container-low shadow-inner"
+                      >
+                        <div className="p-3 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <input
+                              value={newPresetName}
+                              onChange={(e) => setNewPresetName(e.target.value)}
+                              placeholder={t('lab.presets.name_placeholder') || 'Preset name'}
+                              className="flex-1 bg-surface-container-high text-[11px] text-on-surface px-2 py-1.5 rounded border border-outline-variant/35 focus:outline-none focus:border-primary/50"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const payload = buildCurrentPayload();
+                                if (!payload) return;
+                                labQueue.savePreset(newPresetName, payload);
+                                setNewPresetName('');
+                              }}
+                              disabled={!currentProject || !regionId || labQueue.presets.length >= 10}
+                              className="btn-director-secondary text-[10px] px-3 py-1.5 font-bold uppercase tracking-widest disabled:opacity-50"
+                            >
+                              {t('lab.presets.save') || 'Save'}
+                            </button>
+                          </div>
+                          {labQueue.presets.length === 0 ? (
+                            <div className="text-[10px] text-on-surface-variant py-2 text-center">
+                              {t('lab.presets.empty') || 'No presets yet. Save current parameters to reuse later.'}
+                            </div>
+                          ) : (
+                            <ul className="space-y-1.5 max-h-[240px] overflow-y-auto pr-1">
+                              {labQueue.presets.map((p) => (
+                                <li
+                                  key={p.id}
+                                  className="flex items-center justify-between gap-2 bg-surface-container-high border border-outline-variant/30 rounded-lg px-2 py-1.5"
+                                >
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-[11px] font-semibold text-on-surface truncate">
+                                      {p.pinned ? '📌 ' : ''}
+                                      {p.name}
+                                    </div>
+                                    <div className="text-[9px] text-on-surface-variant truncate">
+                                      {p.payload.kind.toUpperCase()} · {new Date(p.createdAt).toLocaleString()}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <button
+                                      type="button"
+                                      title={t('lab.presets.queue') || 'Add to queue'}
+                                      onClick={() => labQueue.addJob(p.payload, p.name)}
+                                      className="text-on-surface-variant hover:text-primary p-1"
+                                    >
+                                      <ListPlus className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      title={p.pinned ? t('lab.presets.unpin') || 'Unpin' : t('lab.presets.pin') || 'Pin'}
+                                      onClick={() => labQueue.togglePinPreset(p.id)}
+                                      className="text-on-surface-variant hover:text-secondary p-1"
+                                    >
+                                      {p.pinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      title={t('lab.presets.delete') || 'Delete'}
+                                      onClick={() => labQueue.deletePreset(p.id)}
+                                      className="text-on-surface-variant hover:text-error p-1"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                    {queueOpen && (
+                      <motion.div
+                        key="queue-drawer"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden rounded-xl border border-outline-variant/35 bg-surface-container-low shadow-inner"
+                      >
+                        <div className="p-3 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const payload = buildCurrentPayload();
+                                if (!payload) return;
+                                labQueue.addJob(payload);
+                              }}
+                              disabled={!currentProject || !regionId}
+                              className="btn-director-secondary text-[10px] px-3 py-1.5 font-bold uppercase tracking-widest disabled:opacity-50 flex items-center gap-1.5"
+                            >
+                              <ListPlus className="w-3.5 h-3.5" /> {t('lab.queue.add') || 'Add current'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => labQueue.runAll()}
+                              disabled={labQueue.isRunning || labQueue.pendingCount === 0}
+                              className="btn-director-primary text-[10px] px-3 py-1.5 font-bold uppercase tracking-widest disabled:opacity-50 flex items-center gap-1.5"
+                            >
+                              <Play className="w-3.5 h-3.5" /> {t('lab.queue.run_all') || 'Run all'}
+                            </button>
+                            {labQueue.isRunning && (
+                              <button
+                                type="button"
+                                onClick={labQueue.cancelRun}
+                                className="text-[10px] px-3 py-1.5 font-bold uppercase tracking-widest bg-amber-100 text-amber-800 border border-amber-300 rounded-md flex items-center gap-1.5"
+                              >
+                                <X className="w-3.5 h-3.5" /> {t('lab.queue.cancel') || 'Cancel'}
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => labQueue.clearQueue(false)}
+                              disabled={labQueue.queue.length === 0 || labQueue.isRunning}
+                              className="ml-auto text-[10px] px-2 py-1.5 font-bold uppercase tracking-widest text-on-surface-variant hover:text-error disabled:opacity-50"
+                              title={t('lab.queue.clear_all') || 'Clear all'}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          {labQueue.pendingCount > 0 && (
+                            <div className="text-[10px] text-on-surface-variant flex items-center gap-2">
+                              <Clock className="w-3 h-3" />
+                              {t('lab.queue.progress', {
+                                done: labQueue.queue.filter((j) => j.status === 'ok' || j.status === 'failed').length,
+                                total: labQueue.queue.length,
+                              }) || `${labQueue.queue.filter((j) => j.status === 'ok' || j.status === 'failed').length}/${labQueue.queue.length} done`}
+                              {' · '}
+                              ETA ~{Math.max(1, Math.round(labQueue.etaMs / 1000))}s
+                            </div>
+                          )}
+
+                          {labQueue.queue.length === 0 ? (
+                            <div className="text-[10px] text-on-surface-variant py-2 text-center">
+                              {t('lab.queue.empty') || 'Queue is empty. Add parameter sets here to batch-run them later.'}
+                            </div>
+                          ) : (
+                            <ul className="space-y-1.5 max-h-[280px] overflow-y-auto pr-1">
+                              {labQueue.queue.map((j) => (
+                                <li
+                                  key={j.id}
+                                  className={`flex items-center justify-between gap-2 border rounded-lg px-2 py-1.5 ${
+                                    j.status === 'running'
+                                      ? 'bg-primary/5 border-primary/30'
+                                      : j.status === 'ok'
+                                      ? 'bg-emerald-50 border-emerald-200'
+                                      : j.status === 'failed'
+                                      ? 'bg-error/10 border-error/30'
+                                      : 'bg-surface-container-high border-outline-variant/30'
+                                  }`}
+                                >
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-[11px] font-semibold text-on-surface truncate flex items-center gap-1.5">
+                                      {j.status === 'ok' ? (
+                                        <CheckCircle className="w-3 h-3 text-emerald-600" />
+                                      ) : j.status === 'failed' ? (
+                                        <XCircle className="w-3 h-3 text-error" />
+                                      ) : j.status === 'running' ? (
+                                        <RefreshCw className="w-3 h-3 text-primary animate-spin" />
+                                      ) : (
+                                        <Clock className="w-3 h-3 text-on-surface-variant" />
+                                      )}
+                                      <span className="truncate">{j.label}</span>
+                                    </div>
+                                    {j.error && (
+                                      <div className="text-[9px] text-error truncate" title={j.error}>
+                                        {j.error}
+                                      </div>
+                                    )}
+                                    {j.scriptId && (
+                                      <div className="text-[9px] text-on-surface-variant truncate font-mono">
+                                        {j.scriptId}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => labQueue.removeJob(j.id)}
+                                    disabled={j.status === 'running'}
+                                    className="text-on-surface-variant hover:text-error p-1 disabled:opacity-30"
+                                    title={t('lab.queue.remove') || 'Remove'}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+          </div>
 
            {/* Column 3: Output Feed */}
            <div className="w-full lg:w-[320px] xl:w-[380px] shrink-0 flex flex-col min-h-0 lg:border-l border-outline-variant/30 lg:pl-6 pb-4">

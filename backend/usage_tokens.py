@@ -6,7 +6,7 @@ from typing import Any
 
 def total_tokens_from_completion(response: Any) -> int | None:
     """
-    Read provider-reported usage (DeepSeek / OpenAI / Ollama OpenAI shim).
+    Read provider-reported usage (DeepSeek / OpenAI-compatible).
     Returns None if the response has no usable usage block.
     """
     usage = getattr(response, "usage", None)

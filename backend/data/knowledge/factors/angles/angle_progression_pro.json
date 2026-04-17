@@ -24,5 +24,12 @@
         "Stop being a Level 1 Noob. Start as a King."
     ],
     "core_emotion": "Indignation (义愤) -> Hope (希望) -> Catharsis (宣泄/爽感)",
-    "short_name": "Progress"
+    "short_name": "Progress",
+    "priority_weight": 1.0,
+    "script_logic": {
+        "hook": "The Humiliation (0-3s): Must show a social or physical defeat. Character is not just 'Level 1', but 'Homeless', 'Betrayed', or 'Bullied' by a high-level antagonist. This creates instant empathy.",
+        "build_up": "The 'Smart' Turning Point: Character finds a 'Glitch', a 'Secret Combo', or makes a 'High-IQ Choice' (e.g., multiplier gate x999). It must look like the player 'cheated' the system legally.",
+        "climax": "The Visual Evolution: Not a jump cut, but a 'Continuous Transformation'. Show armor growing, weapons glowing, and the background changing from a shack to a palace in real-time.",
+        "cta": "The Payback (Catharsis): The protagonist returns to the initial bully. Don't just kill them; 'Obliterate' them with such high numbers that the screen shakes. The bully must show a 'Fear' reaction animation."
+    }
 }

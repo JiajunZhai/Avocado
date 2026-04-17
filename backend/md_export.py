@@ -98,6 +98,14 @@ def synthesis_to_markdown(
     if mode not in {"cn", "en"}:
         mode = "cn"
     sid = payload.get("script_id", "")
+    
+    # Calculate Fingerprint
+    region_val = recipe.get("region", "UNK")
+    platform_val = recipe.get("platform", "UNK")
+    angle_val = recipe.get("angle", "UNK")
+    creative_fingerprint = f"CRV-{project_name[:8]}_{region_val}_{platform_val}_{angle_val}_{sid[:6]}"
+    creative_fingerprint = _safe_path_segment(creative_fingerprint, 100)
+    
     # Quick Copy Mode: render a copywriting booklet instead of storyboard table
     acm = payload.get("ad_copy_matrix")
     script = payload.get("script")
@@ -111,6 +119,7 @@ def synthesis_to_markdown(
             "",
             f"- **Project**: {project_name}",
             f"- **Copy ID**: `{sid}`",
+            f"- **Fingerprint**: `{creative_fingerprint}`",
             f"- **Engine**: `{engine}`",
             f"- **Region**: `{recipe.get('region', '')}`",
             f"- **Platform**: `{recipe.get('platform', '')}`",
@@ -169,6 +178,7 @@ def synthesis_to_markdown(
             "",
             f"- **Project**: {project_name}",
             f"- **Script ID**: `{sid}`",
+            f"- **Fingerprint**: `{creative_fingerprint}`",
             f"- **Engine**: `{engine}`",
             f"- **Region**: `{recipe.get('region', '')}`",
             f"- **Platform**: `{recipe.get('platform', '')}`",
@@ -198,6 +208,7 @@ def synthesis_to_markdown(
             "",
             f"- **项目**: {project_name}",
             f"- **Script ID**: `{sid}`",
+            f"- **指纹 ID**: `{creative_fingerprint}`",
             f"- **引擎**: `{engine}`",
             f"- **Region**: `{recipe.get('region', '')}`",
             f"- **Platform**: `{recipe.get('platform', '')}`",

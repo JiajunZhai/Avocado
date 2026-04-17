@@ -27,9 +27,27 @@ _CACHE: dict[str, Any] | None = None
 
 
 def load_risk_terms() -> dict[str, Any]:
+    """Phase 26/E — read from SQLite (seeded from risk_terms.json).
+
+    Falls back to the JSON file on disk if the DB store is unreachable so
+    unit tests and one-off scripts that never call ``run_migrations`` still
+    get sensible data.
+    """
     global _CACHE
     if _CACHE is not None:
         return _CACHE
+    try:
+        from compliance_store import load_all_grouped
+
+        data = load_all_grouped()
+        if data.get("global") or data.get("platform_overrides") or data.get("region_overrides"):
+            data.setdefault("global", [])
+            data.setdefault("platform_overrides", {})
+            data.setdefault("region_overrides", {})
+            _CACHE = data
+            return data
+    except Exception:
+        pass
     p = _risk_terms_path()
     if not p.exists():
         _CACHE = {"global": [], "platform_overrides": {}, "region_overrides": {}}
@@ -45,6 +63,12 @@ def load_risk_terms() -> dict[str, Any]:
     raw.setdefault("region_overrides", {})
     _CACHE = raw
     return raw
+
+
+def invalidate_cache() -> None:
+    """Drop the in-memory cache so the next read pulls fresh DB state."""
+    global _CACHE
+    _CACHE = None
 
 
 def _norm(s: str) -> str:
@@ -202,6 +226,7 @@ def maybe_generate_rewrite_suggestions(
     hits: list[dict[str, Any]],
     tiles_by_id: dict[str, dict[str, Any]],
     output_mode: str = "cn",
+    model: str | None = None,
 ) -> list[dict[str, Any]]:
     """
     Best-effort cloud suggestions. Only runs when caller opts in and cloud client exists.
@@ -241,7 +266,7 @@ def maybe_generate_rewrite_suggestions(
     user = json.dumps({"items": items}, ensure_ascii=False)
     try:
         resp = cloud_client.chat.completions.create(
-            model=os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
+            model=(model or os.getenv("DEEPSEEK_MODEL", "deepseek-chat")),
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": system},
